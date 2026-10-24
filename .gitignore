@@ -1,0 +1,10 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+node_modules/
+dist/
+build/
+scratch/
+secrets/
