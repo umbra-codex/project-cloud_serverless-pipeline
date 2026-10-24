@@ -1,0 +1,10 @@
+# SP11 step 2: the tunnel publishes the status page and leaves the route that
+# submits events behind Cloudflare Access.
+# Format: file | regular expression the file must contain | message if it doesn't
+compose.yaml | ^  status:$ | needs a status service
+compose.yaml | ^    build: \./compose/status$ | the status service must build from compose/status
+compose.yaml | ^    ports: \["127\.0\.0\.1:8080:8080"\]$ | the status port must be published on loopback, because the tunnel is the only way in
+compose.yaml | ^  cloudflared:$ | needs a cloudflared service, which is how the hostname is published
+compose.yaml | ^    image: cloudflare/cloudflared:latest$ | cloudflared must run the official image
+compose.yaml | TUNNEL_TOKEN: \$\{TUNNEL_TOKEN\} | cloudflared must read the tunnel token from the environment, never from a file in the repo
+compose.yaml | ^    depends_on: \[status, ingest\]$ | the tunnel must start after both the status page and the ingest route

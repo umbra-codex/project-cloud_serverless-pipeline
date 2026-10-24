@@ -1,0 +1,7 @@
+# SP6 step 7: the SDK calls the ingest handler's entry point makes. Checked as
+# text, because the handler test stubs them out.
+# Format: file | regular expression the file must contain | message if it doesn't
+src/ingest/index.ts | new GetObjectCommand\(\{ *Bucket: *bucket, *Key: *key *\}\) | must read the object S3 named, by bucket and key
+src/ingest/index.ts | QueueUrl: *QUEUE_URL | must send to the queue in QUEUE_URL
+src/ingest/index.ts | MessageBody: *body | must send the handler's message string as the body
+src/ingest/index.ts | QUEUE_URL | must read the queue URL from the QUEUE_URL environment variable

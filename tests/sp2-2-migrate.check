@@ -1,0 +1,6 @@
+# SP2 step 2: the bootstrap configuration keeps its state in the bucket it made.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/bootstrap/backend.tf | ^  backend "s3" \{ | the bootstrap config needs an S3 backend of its own
+terraform/bootstrap/backend.tf | ^    key          = "bootstrap/terraform\.tfstate"$ | its own key, so the pipeline destroy in SP14 cannot reach it
+terraform/bootstrap/backend.tf | ^    use_lockfile = true$ | native locking, not a DynamoDB table
+terraform/bootstrap/backend.tf | ^    encrypt      = true$ | state objects are encrypted at rest

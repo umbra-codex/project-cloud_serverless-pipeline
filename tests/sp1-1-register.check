@@ -1,0 +1,8 @@
+# SP1 step 1: the milestone is registered, so the check runs on this branch from
+# the first push. Nothing in this milestone has a file of its own: the account is
+# the artifact, and this step is what makes CI look at the branch at all.
+# Format: file | regular expression the file must contain | message if it doesn't
+milestones.txt | ^SP1$ | SP1 must be registered, or CI checks nothing on this branch
+docs/milestones/SP1.md | ^# SP1: AWS access$ | this brief is part of the tree
+.github/scripts/check.sh | milestones\.txt | the check runner reads the milestone list
+README.md | ^# serverless-pipeline$ | the repository title from SP0 is unchanged

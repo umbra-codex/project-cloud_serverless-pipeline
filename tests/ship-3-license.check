@@ -1,0 +1,7 @@
+# SHIP step 3: a repository a stranger can use has a license that names a holder
+# and a year. The text is the standard MIT one, not a summary of it.
+# Format: file | regular expression the file must contain | message if it doesn't
+LICENSE | ^MIT License$ | needs the MIT title on its own line
+LICENSE | ^Copyright \(c\) 20[0-9][0-9] | needs a copyright line with a year and a holder
+LICENSE | ^Permission is hereby granted, free of charge | needs the grant paragraph
+LICENSE | ^THE SOFTWARE IS PROVIDED "AS IS" | needs the warranty paragraph

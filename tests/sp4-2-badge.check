@@ -1,0 +1,4 @@
+# SP4 step 2: the README carries the CI badge, linked to the workflow run page.
+# Format: file | regular expression the file must contain | message if it doesn't
+README.md | ^\[\!\[ci\]\(https://github\.com/[^/)]+/project-cloud_serverless-pipeline/actions/workflows/ci\.yml/badge\.svg\)\]\(https://github\.com/[^/)]+/project-cloud_serverless-pipeline/actions/workflows/ci\.yml\)$ | needs the badge on its own line: the ci badge image, linked to the workflow page
+README.md | ^# serverless-pipeline$ | must keep the repo title as the first heading

@@ -1,0 +1,9 @@
+# SP3 step 3: the role's permissions. Read-only on the services, and read and
+# write on the state bucket because plan takes the lock.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/bootstrap/oidc.tf | ReadOnlyAccess | the plan job needs the managed read-only policy
+terraform/bootstrap/oidc.tf | s3:ListBucket | the state policy must allow listing the bucket
+terraform/bootstrap/oidc.tf | s3:GetObject | and reading state objects
+terraform/bootstrap/oidc.tf | s3:PutObject | and writing the lock file, or every plan fails on it
+terraform/bootstrap/oidc.tf | s3:DeleteObject | and deleting the lock afterwards
+terraform/bootstrap/outputs.tf | ^output "ci_role_arn" \{ | the ARN is an output, because GitHub reads it with tofu output

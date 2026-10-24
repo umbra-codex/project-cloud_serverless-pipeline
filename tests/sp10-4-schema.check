@@ -1,0 +1,8 @@
+# SP10 step 4: compose/init.sql builds the table on the first start, with the
+# idempotency guarantee in the schema rather than in the application.
+# Format: file | regular expression the file must contain | message if it doesn't
+compose/init.sql | CREATE TABLE IF NOT EXISTS events | must add the events table if it is not there
+compose/init.sql | idempotency_key TEXT PRIMARY KEY | the key must be idempotency_key, which is what makes ON CONFLICT DO NOTHING work
+compose/init.sql | payload +JSONB NOT NULL | payload must be JSONB and not null
+compose/init.sql | processed_at +TIMESTAMPTZ NOT NULL DEFAULT now\(\) | processed_at must default to now()
+compose/init.sql | landed_at +TIMESTAMPTZ NOT NULL | landed_at must be its own column, or the Compose latency has nothing to subtract

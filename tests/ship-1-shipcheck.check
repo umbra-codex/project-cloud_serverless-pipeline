@@ -1,0 +1,19 @@
+# SHIP step 1: the ship check names every group it refuses, and it refuses the
+# paths this milestone removes by name. The scan lists are the brief's table, so
+# a line here and a row there are the same claim.
+# Format: file | regular expression the file must contain | message if it doesn't
+.github/scripts/ship-check.sh | ^docs$ | the check must refuse the overview and the briefs while they are still in the tree
+.github/scripts/ship-check.sh | ^milestones\.txt$ | the check must refuse the milestone list
+.github/scripts/ship-check.sh | ^\.github/workflows/milestone-check\.yml$ | the check must refuse the workflow that maps a branch to a milestone
+.github/scripts/ship-check.sh | ^tests/sp\*\.check$ | the check must refuse the step checks that grade a learner's edits
+.github/scripts/ship-check.sh | ^tests/tooling- | the check must refuse the tests of the check helpers
+.github/scripts/ship-check.sh | Checkpoint | the check must refuse the word a learner reads
+.github/scripts/ship-check.sh | Done when | the check must refuse the heading a learner reads
+.github/scripts/ship-check.sh | you will | the check must refuse the second person a learner reads
+.github/scripts/ship-check.sh | /home/ | the check must refuse an absolute home path
+.github/scripts/ship-check.sh | Kamrui|kamrui | the check must refuse the name of the machine that built this
+.github/scripts/ship-check.sh | GUIDE_DIR | the check must refuse the variable that only exists while the guide is being built
+.github/scripts/ship-check.sh | AKIA | the check must refuse an access key id
+.github/scripts/ship-check.sh | BEGIN \[A-Z \]\*PRIVATE KEY | the check must refuse a private key
+.github/scripts/ship-check.sh | TODO | the check must refuse a TODO
+.github/scripts/ship-check.sh | Ship check passed | the check must print one success line when nothing is left

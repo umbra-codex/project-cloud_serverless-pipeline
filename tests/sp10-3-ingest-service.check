@@ -1,0 +1,12 @@
+# SP10 step 3: compose/ingest/index.ts is the stand-in for an object landing in
+# S3. It answers POST, writes one stream entry with a landing time, and says 202.
+# Format: file | regular expression the file must contain | message if it doesn't
+compose/ingest/index.ts | req\.method !== "POST" | must accept POST only and answer 405 to anything else
+compose/ingest/index.ts | res\.writeHead\(405\) | must answer 405 to a method it does not serve
+compose/ingest/index.ts | xAdd\("events", "\*" | must add one entry to the events stream per request
+compose/ingest/index.ts | landedAt: new Date\(\)\.toISOString\(\) | must stamp landedAt, the same clock start the AWS ingest function records
+compose/ingest/index.ts | idempotencyKey: String\(body\.idempotencyKey\) | must carry the request's idempotency key into the stream entry
+compose/ingest/index.ts | res\.writeHead\(202\) | must answer 202, not 200: the message is queued, not processed
+compose/ingest/package.json | "redis": "\^5\.0\.0" | the ingest service must use redis 5, the major the reference build runs
+compose/ingest/Dockerfile | ^RUN npm install$ | the build must install dependencies without a lock, because these folders commit none
+compose/ingest/Dockerfile | !^RUN npm ci$ | npm ci needs a lock file, and this folder has none

@@ -1,0 +1,45 @@
+# Every skip carries its reason. The stack lives for hours, not months, so the
+# production-hardening checks below cost money or time without buying anything
+# for a burst that is destroyed the same day. Anything not listed here still
+# fails the run.
+skip-check:
+  # A second bucket for access logs would need its own policy and its own
+  # lifecycle, and nothing reads them here; CloudTrail-style auditing is out of
+  # scope for a demo stack.
+  - CKV_AWS_18
+  # The bucket is emptied and destroyed the same day, so a lifecycle rule would
+  # only demonstrate a rule.
+  - CKV2_AWS_61
+  # No VPC by design: every service is a managed endpoint over IAM-authenticated
+  # HTTPS, so a private network adds cost and moving parts without adding safety.
+  - CKV_AWS_117
+  # SSE-S3 instead of SSE-KMS: KMS charges per request and needs a key policy,
+  # and nothing here needs a customer-managed key.
+  - CKV_AWS_145
+  # Same reason for the log groups: an AWS-owned key encrypts them already.
+  - CKV_AWS_158
+  # The environment variables hold a queue URL and a table name. There is no
+  # secret in either, so a KMS key for them protects nothing.
+  - CKV_AWS_173
+  # The table is encrypted with an AWS-owned key and lives for hours. A customer
+  # managed key bills per month whether or not the table exists.
+  - CKV_AWS_119
+  # One Region on purpose: this stack is evidence for a local benchmark, not a
+  # service with a recovery objective. Replication would double the storage bill.
+  - CKV_AWS_144
+  # 14 days of logs is a cost decision, not an oversight: the stack exists for
+  # one sitting, and the evidence package holds what has to survive.
+  - CKV_AWS_338
+  # Code signing needs a signing profile and a signature on every build. The zip
+  # is built by the same pipeline that deploys it, so signing adds a step
+  # without closing a path an attacker could use here.
+  - CKV_AWS_272
+  # The consumer's failures are already captured twice: the queue's redrive
+  # policy sends a message to the dead-letter queue after five receives, and the
+  # event source mapping reports per-message failures. A Lambda destination on
+  # top of that would be a third path for the same error.
+  - CKV_AWS_116
+  # Tracing is the A-grade elevation and it is planned for the compose runtime,
+  # where a trace can be kept. On the AWS side the stack is destroyed before the
+  # trace would be worth reading.
+  - CKV_AWS_50

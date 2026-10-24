@@ -1,0 +1,18 @@
+# SHIP step 2: the README answers a stranger's four questions on the first
+# screen, then proves the claims section by section.
+# Format: file | regular expression the file must contain | message if it doesn't
+README.md | ^# serverless-pipeline$ | needs the repository title
+README.md | ^## What this is$ | needs the section that says what it is
+README.md | ^## Architecture$ | needs the architecture section
+README.md | ^## Proof it works$ | needs the section that names what proves it works
+README.md | ^## Decisions$ | needs the trade-offs, one line per decision
+README.md | ^## Cost and teardown$ | needs what it cost and how it was torn down
+README.md | ^## Run it yourself$ | needs the instructions that start it
+README.md | ^## What you can verify yourself$ | needs the section that splits checkable claims from captured evidence
+README.md | ^## License$ | needs the license
+README.md | ^\[!\[ci\]\(https://github\.com/ | the badge on the first screen is the first proof
+README.md | ^What proves it: | the intro names what proves it, so the first screen answers the question
+README.md | actions/runs/[0-9]+ | links the specific run that finished the work
+README.md | evidence/README\.md | points at the evidence index
+README.md | podman compose up | says how the Compose runtime starts, with the engine this machine has
+README.md | !docker compose | must not tell a reader to run docker, which is not installed on this machine

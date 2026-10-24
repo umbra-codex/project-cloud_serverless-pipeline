@@ -1,0 +1,23 @@
+# SP10 step 1: compose.yaml stands in for the AWS pieces: Redis Streams for
+# SQS, Postgres for DynamoDB, and a worker for the Lambda consumer. The engine on
+# this machine is rootless Podman, so the brief starts the stack with podman.
+# Format: file | regular expression the file must contain | message if it doesn't
+docs/milestones/SP10.md | podman compose up -d --build | the brief must start the stack with podman, the engine this machine has
+docs/milestones/SP10.md | !docker compose | the brief must not tell you to run docker, which is not installed here
+compose.yaml | ^  redis:$ | needs a redis service
+compose.yaml | ^    image: redis:7-alpine$ | redis must run the redis:7-alpine image
+compose.yaml | --appendonly | redis must keep its stream on disk: --appendonly yes
+compose.yaml | ^  postgres:$ | needs a postgres service
+compose.yaml | ^    image: postgres:16-alpine$ | postgres must run the postgres:16-alpine image
+compose.yaml | ^      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password$ | postgres must read its password from the secret file, not an environment value
+compose.yaml | ^      - \./compose/init.sql:/docker-entrypoint-initdb\.d/init\.sql:ro$ | the table schema must be mounted into the entrypoint folder, readonly
+compose.yaml | ^  ingest:$ | needs an ingest service, the stand-in for the S3 trigger
+compose.yaml | ^    build: \./compose/ingest$ | the ingest service must build from compose/ingest
+compose.yaml | ^    ports: \["127\.0\.0\.1:8081:8081"\]$ | the ingest port must be published on loopback, not on every interface
+compose.yaml | ^  worker:$ | needs a worker service, the stand-in for the consumer
+compose.yaml | ^    build: \./compose/worker$ | the worker service must build from compose/worker
+compose.yaml | ^      PG_PASSWORD_FILE: /run/secrets/pg_password$ | the worker must read the database password from the secret file
+compose.yaml | ^secrets:$ | needs a top-level secrets block
+compose.yaml | ^  pg_password:$ | needs a pg_password secret
+compose.yaml | ^    file: \./secrets/pg_password$ | the secret must come from secrets/pg_password, which is gitignored
+compose.yaml | ^    restart: unless-stopped$ | every long-running service must restart unless stopped

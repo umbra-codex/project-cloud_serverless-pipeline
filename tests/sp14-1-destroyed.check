@@ -1,0 +1,8 @@
+# SP14 step 1: the destroy is confirmed by asking AWS, not by reading the log.
+# Format: file | regular expression the file must contain | message if it doesn't
+scripts/check-destroyed.sh | lambda list-functions | must ask for the functions that are left
+scripts/check-destroyed.sh | sqs list-queues --queue-name-prefix | must ask for the queues that are left
+scripts/check-destroyed.sh | dynamodb list-tables | must ask for the tables that are left
+scripts/check-destroyed.sh | s3api list-buckets | must ask for the buckets that are left
+scripts/check-destroyed.sh | ^  exit 1$ | must fail when something is still there
+scripts/check-destroyed.sh | ^set -euo pipefail$ | must fail fast: set -euo pipefail

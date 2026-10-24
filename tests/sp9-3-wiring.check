@@ -1,0 +1,9 @@
+# SP9 step 3: the SDK calls the consumer's entry point makes. Checked as text,
+# because the handler test stubs the writer.
+# Format: file | regular expression the file must contain | message if it doesn't
+src/consumer/index.ts | ConditionalCheckFailedException | must catch the SDK's duplicate-key error class and turn it into a duplicate
+src/consumer/index.ts | ConditionExpression: *"attribute_not_exists\(idempotency_key\)" | the put must be conditional on the key not existing, or a duplicate overwrites the row
+src/consumer/index.ts | idempotency_key: *\{ *S: *row\.idempotencyKey *\} | must write idempotency_key as a string attribute
+src/consumer/index.ts | payload: *\{ *S: *row\.payload *\} | must write the message body into payload
+src/consumer/index.ts | processed_at: *\{ *S: *row\.processedAt *\} | must write processed_at, the value the benchmark subtracts from landedAt
+src/consumer/index.ts | TABLE_NAME | must read the table name from the TABLE_NAME environment variable

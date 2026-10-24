@@ -1,0 +1,5 @@
+# SP7 step 2: the consumer's references the mock provider cannot evaluate.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/consumer.tf | assume_role_policy *= *data.aws_iam_policy_document\.lambda_assume\.json | the consumer role must reuse the shared trust policy
+terraform/consumer.tf | policy *= *data.aws_iam_policy_document\.consumer_permissions\.json | the inline policy must use the consumer permissions document, not the trust policy
+terraform/consumer.tf | source_code_hash *= *data.archive_file\.consumer\.output_base64sha256 | the function must set source_code_hash from the consumer archive

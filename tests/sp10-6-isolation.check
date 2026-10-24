@@ -1,0 +1,14 @@
+# SP10 step 6: the isolation guard. The stack runs on this machine, beside the
+# rest of the desktop, so nothing here may listen beyond loopback, read a home
+# directory, or run as root. A line beginning with "!" must NOT match.
+# Format: file | regular expression the file must contain (or must not, after !) | message if it doesn't
+compose.yaml | ^    ports: \["127\.0\.0\.1:8081:8081"\]$ | the ingest port must stay published on loopback only
+compose.yaml | !^    ports: \["[0-9]+:[0-9]+"\]$ | a port without a host address listens on every interface, which puts this machine on the network
+compose.yaml | !ports: \["(0\.0\.0\.0|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.) | a port bound to a LAN, tailnet, or all-interfaces address is a second way in
+compose.yaml | !(^|[^a-zA-Z])/(home|Users|root)/ | no host path outside this repository may be mounted
+compose.yaml | !\$HOME | the home directory must not be mounted into a container
+compose.yaml | !privileged | no container may run privileged
+compose.yaml | !network_mode: *host | host networking would bypass the loopback publish
+compose.yaml | !user: *["']?root["']? *$ | no service may be told to run as root
+compose/worker/Dockerfile | ^USER node$ | the worker must run as the image's non-root user
+compose/ingest/Dockerfile | ^USER node$ | the ingest service must run as the image's non-root user

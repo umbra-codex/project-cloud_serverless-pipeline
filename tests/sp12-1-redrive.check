@@ -1,0 +1,11 @@
+# SP12 step 1: the redrive script moves the dead-letter queue's messages back and
+# proves the queue emptied, with a wait that ends.
+# Format: file | regular expression the file must contain | message if it doesn't
+scripts/redrive.sh | ^set -euo pipefail$ | must fail fast: set -euo pipefail
+scripts/redrive.sh | tofu -chdir=terraform output -raw dlq_url | must read the dead-letter queue's url from the stack's outputs
+scripts/redrive.sh | start-message-move-task | must ask SQS to move the messages, which is the redrive
+scripts/redrive.sh | --source-arn | must name the dead-letter queue as the move's source
+scripts/redrive.sh | --destination-arn | must name the main queue as the move's destination
+scripts/redrive.sh | ApproximateNumberOfMessages | must measure how many messages are left, not just trust the move task
+scripts/redrive.sh | seq 1 60 | every wait must be a bounded loop, here 60 polls
+scripts/redrive.sh | ^  exit 1$ | must fail the script when messages are still there after the wait

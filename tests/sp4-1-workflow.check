@@ -1,0 +1,23 @@
+# SP4 step 1: two workflows. ci.yml is the project's CI (static and plan);
+# milestone-check.yml is the step-test runner.
+# Format: file | regular expression the file must contain | message if it doesn't
+.github/workflows/ci.yml | ^name: ci$ | needs the project CI workflow, named ci
+.github/workflows/ci.yml | ^  static:$ | ci.yml needs a job called static
+.github/workflows/ci.yml | ^  plan:$ | ci.yml needs a job called plan
+.github/workflows/ci.yml | ^      - uses: opentofu/setup-opentofu@v2$ | must install OpenTofu with opentofu/setup-opentofu
+.github/workflows/ci.yml | ^          tofu_version: 1\.13\.1$ | must pin the OpenTofu version the tests were run on, 1.13.1
+.github/workflows/ci.yml | tofu fmt -check -recursive | the static job must run the formatting gate
+.github/workflows/ci.yml | init -backend=false | the static job must validate without reading the backend, because it has no identity
+.github/workflows/ci.yml | tflint --recursive --config | must run tflint over the whole repo with the repo's config
+.github/workflows/ci.yml | ^      - uses: terraform-linters/setup-tflint@v6$ | must install tflint
+.github/workflows/ci.yml | ^      - uses: bridgecrewio/checkov-action@v12\.2915\.0$ | must run checkov, pinned to a release tag and never @master
+.github/workflows/ci.yml | ^          soft_fail: false$ | checkov findings must fail the run
+.github/workflows/ci.yml | ^      id-token: write$ | the plan job needs id-token: write to exchange a GitHub token for a cloud session
+.github/workflows/ci.yml | ^          role-to-assume: \$\{\{ vars\. | the plan job must assume the CI role from the repo variable
+.github/workflows/ci.yml | npm ci && npm run build | the plan job must build every Lambda bundle before it plans
+.github/workflows/ci.yml | ^      - run: tofu -chdir=terraform plan -no-color -input=false$ | the plan job must run a plan against the real backend
+.github/workflows/ci.yml | ^      TF_VAR_alert_email: \$\{\{ secrets\.ALERT_EMAIL \}\}$ | the plan job needs the alert email, because that input has no default
+.github/workflows/milestone-check.yml | ^name: milestone-check$ | needs the separate milestone-check workflow
+.github/workflows/milestone-check.yml | ^  check:$ | milestone-check.yml needs one job called check
+.github/workflows/milestone-check.yml | run: \.github/scripts/check\.sh \$MILESTONE all$ | the check job must run .github/scripts/check.sh with the milestone it worked out
+.github/workflows/milestone-check.yml | ^      - uses: oven-sh/setup-bun@v2$ | must install Bun in the check job, because the handler steps run with bun test

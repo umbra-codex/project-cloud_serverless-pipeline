@@ -1,0 +1,15 @@
+# SP0 step 1: the repository skeleton. No cloud account is involved: these are
+# files in the repo.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/backend.tf | ^  required_version = ">= 1\.10"$ | the version pin must be >= 1.10, the release that made native S3 locking possible
+.gitignore | ^\.terraform/$ | provider binaries and module cache are never committed
+.gitignore | ^\*\.tfstate$ | state never goes into git
+.gitignore | ^\*\.tfstate\.\*$ | nor do the temporary files OpenTofu writes beside it
+.gitignore | ^\*\.tfvars$ | local values, possibly secrets
+.gitignore | ^!\*\.tfvars\.example$ | the example file is committed, so a reader knows what to set
+.gitignore | ^node_modules/$ | installed, not authored
+.gitignore | ^dist/$ | compiled output, rebuilt by CI
+.gitignore | ^build/$ | the same
+.gitignore | ^scratch/$ | local files the money milestones create
+.gitignore | ^secrets/$ | the Postgres password file in SP10
+README.md | ^# serverless-pipeline$ | the repo title is the first heading
