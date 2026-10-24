@@ -1,0 +1,4 @@
+# Every checkout uses LF, on every machine. Without this, a clone on Windows
+# changes line endings and the check's formatting row goes red for files nobody
+# edited. Binary files are detected by git and left alone.
+* text=auto eol=lf

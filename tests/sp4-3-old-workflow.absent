@@ -1,0 +1,4 @@
+# SP4 step 3: the throwaway OIDC workflow is gone, replaced by the real one.
+# Format: one path per line that must NOT be committed (or must not exist when
+# the tree is not a git repository).
+.github/workflows/oidc-check.yaml

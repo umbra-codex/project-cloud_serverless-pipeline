@@ -1,0 +1,39 @@
+# SP15 step 1: the README answers every line of the spec's definition of done.
+# Format: file | regular expression the file must contain | message if it doesn't
+README.md | ^# serverless-pipeline$ | needs the repo title
+README.md | ^\[\!\[ci\]\(https://github\.com/OWNER/project-cloud_serverless-pipeline/actions/workflows/ci\.yml/badge\.svg\)\] | needs the CI badge, linked to the workflow page
+README.md | ^## What this is$ | needs a "What this is" section naming both runtimes
+README.md | ^## Architecture$ | needs an Architecture section
+README.md | ^```mermaid$ | needs at least one mermaid diagram
+README.md | PutObject | the AWS diagram must show the object landing in S3
+README.md | XADD | the Compose diagram must show the ingest service adding a stream entry
+README.md | ^## How an event moves$ | needs the numbered event walk
+README.md | ^## The benchmark$ | needs a benchmark section
+README.md | ^\| Runtime \| Events \| p50 \| p95 \| | needs the benchmark table header
+README.md | ^\| AWS \| 1,000 \| | needs the AWS row of the benchmark table, 1,000 events
+README.md | ^\| Compose \| 1,000 \| | needs the Compose row of the benchmark table, 1,000 events
+README.md | ^## IAM: the policy, and the reason for every action$ | needs the IAM section
+README.md | ^## Why this cannot run away$ | needs the blast-radius section
+README.md | ^## What you can verify yourself$ | needs the section that splits checkable claims from captured evidence
+README.md | ^## Decisions$ | needs the decision log
+README.md | ^## Run it yourself$ | needs run instructions
+README.md | nodejs24\.x | must name the runtime, nodejs24.x
+README.md | 60 to 90 | must state the length of the failure capture
+README.md | why this can't run away | must state the "why this can't run away" line
+README.md | reserved_concurrent_executions | must name the per-function concurrency cap
+README.md | maximum_concurrency | must name the mapping's own concurrency cap
+README.md | include_credit = false | must explain that the budget excludes credits
+README.md | check-destroyed\.sh | must point at the script that confirms the destroy
+README.md | github\.com/OWNER/project-cloud_serverless-pipeline/releases | must link the capture as a Release asset, not a committed file
+README.md | ^\| `s3:GetObject` | the action table needs a s3:GetObject row
+README.md | ^\| `sqs:SendMessage` | the action table needs a sqs:SendMessage row
+README.md | ^\| `dynamodb:PutItem` | the action table needs a dynamodb:PutItem row
+README.md | ^\| `sqs:ReceiveMessage` | the action table needs a sqs:ReceiveMessage row
+README.md | ^\| `sqs:DeleteMessage` | the action table needs a sqs:DeleteMessage row
+README.md | ^\| `sqs:GetQueueAttributes` | the action table needs a sqs:GetQueueAttributes row
+README.md | ^\| `logs:CreateLogStream` | the action table needs a logs:CreateLogStream row
+README.md | ^\| `logs:PutLogEvents` | the action table needs a logs:PutLogEvents row
+README.md | maxReceiveCount | the decision log must record the maxReceiveCount choice
+README.md | Idempotency key from the object key | the decision log must record the key derivation
+README.md | podman compose up | must say how the Compose runtime starts, with the engine this machine has
+README.md | !docker compose | must not tell a reader to run docker, which is not installed on this machine

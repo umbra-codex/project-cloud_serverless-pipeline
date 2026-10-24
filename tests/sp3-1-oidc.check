@@ -1,0 +1,15 @@
+# SP3 step 1 (text read): the provider, the role, and the trust policy. The plan
+# test beside this file runs the module twice; this read proves the subject is
+# built from four interpolations, which a typed-in value cannot satisfy.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/bootstrap/oidc.tf | ^resource "aws_iam_openid_connect_provider" "github" \{ | the provider is the first resource
+terraform/bootstrap/oidc.tf | url            = "https://token.actions.githubusercontent.com" | the URL must be the GitHub token issuer
+terraform/bootstrap/oidc.tf | client_id_list = \["sts.amazonaws.com"\] | the audience must match the trust condition
+terraform/bootstrap/oidc.tf | ^resource "aws_iam_role" "ci_plan" \{ | the role CI assumes
+terraform/bootstrap/oidc.tf | name = "github-ci-plan" | the role name SP15 and the README refer to
+terraform/bootstrap/oidc.tf | assume_role_policy = data.aws_iam_policy_document.ci_plan_trust.json | the role must use the trust document, not an inline string
+terraform/bootstrap/oidc.tf | token.actions.githubusercontent.com:sub | the subject condition, which is the whole security boundary
+terraform/bootstrap/oidc.tf | repo:\$\{var.github_owner\}@\$\{var.github_owner_id\}/\$\{var.github_repo\}@\$\{var.github_repo_id\}:pull_request | the pull-request subject, with both numeric IDs
+terraform/bootstrap/oidc.tf | repo:\$\{var.github_owner\}@\$\{var.github_owner_id\}/\$\{var.github_repo\}@\$\{var.github_repo_id\}:ref:refs/heads/main | the main-branch subject, with both numeric IDs
+terraform/bootstrap/variables.tf | ^variable "github_owner_id" \{ | the owner ID is an input
+terraform/bootstrap/variables.tf | ^variable "github_repo_id" \{ | and the repository's

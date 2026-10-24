@@ -1,0 +1,12 @@
+# SP13 step 1: the benchmark sends 1,000 events and works out p50 and p95 from
+# the rows the stack wrote.
+# Format: file | regular expression the file must contain | message if it doesn't
+scripts/bench.sh | COUNT=\$\{1:-1000\} | must default to 1,000 events
+scripts/bench.sh | evt-\$i\.json | must build one event file per event
+scripts/bench.sh | --recursive | must upload the whole folder in one call
+scripts/bench.sh | --select COUNT | must poll the table's count until the rows land, inside a bounded loop
+scripts/bench.sh | fromdateiso8601 | must turn the ISO timestamps into epoch seconds
+scripts/bench.sh | capture\(" | must read the milliseconds separately, because fromdateiso8601 rejects them
+scripts/bench.sh | p50= | must report p50
+scripts/bench.sh | p95= | must report p95
+scripts/bench.sh | evidence/bench-aws-raw\.json | must save the raw rows the numbers came from

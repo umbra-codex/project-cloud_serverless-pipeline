@@ -1,0 +1,5 @@
+# SP6 step 3: the notification waits for the permission it needs. The mock
+# provider cannot see depends_on, so this one is checked as text.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/trigger.tf | ^ *depends_on *= *\[ *aws_lambda_permission\.s3_invoke *\] *(#.*)?$ | the bucket notification must wait for the permission: depends_on = [aws_lambda_permission.s3_invoke], on one line
+terraform/trigger.tf | lambda_function_arn *= *aws_lambda_function\.ingest\.arn | the notification must invoke the function by its arn attribute, not by a typed-in name

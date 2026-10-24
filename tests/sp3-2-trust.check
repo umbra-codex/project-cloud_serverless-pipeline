@@ -1,0 +1,14 @@
+# SP3 step 2: the trust policy names this repository and nothing else, and every
+# part of the subject comes from a variable. This is a text read; the plan beside it
+# twice with different owners, repositories, and numeric IDs; this check reads
+# the same values out of the file.
+# Format: file | regular expression the file must contain | message if it doesn't
+terraform/bootstrap/oidc.tf | ^resource "aws_iam_openid_connect_provider" "github" \{ | the OIDC provider must exist
+terraform/bootstrap/oidc.tf | url            = "https://token.actions.githubusercontent.com" | the provider URL must be the GitHub token issuer
+terraform/bootstrap/oidc.tf | client_id_list = \["sts.amazonaws.com"\] | the audience must be sts.amazonaws.com
+terraform/bootstrap/oidc.tf | sts:AssumeRoleWithWebIdentity | the trust policy must allow the web-identity action
+terraform/bootstrap/oidc.tf | token.actions.githubusercontent.com:sub | the trust policy must be conditioned on the subject, which is the whole security boundary
+terraform/bootstrap/oidc.tf | repo:\$\{var.github_owner\}@\$\{var.github_owner_id\}/\$\{var.github_repo\}@\$\{var.github_repo_id\}:pull_request | the pull request subject must carry both numeric IDs, or the token will not match
+terraform/bootstrap/oidc.tf | repo:\$\{var.github_owner\}@\$\{var.github_owner_id\}/\$\{var.github_repo\}@\$\{var.github_repo_id\}:ref:refs/heads/main | and the main branch subject must as well
+terraform/bootstrap/variables.tf | ^variable "github_owner_id" \{ | the owner ID is an input, not a literal
+terraform/bootstrap/variables.tf | ^variable "github_repo_id" \{ | and so is the repository ID

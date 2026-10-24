@@ -1,0 +1,8 @@
+# SP0 step 2: the guide's own files are in the clone, and this milestone is
+# registered so CI checks it from now on.
+# Format: file | regular expression the file must contain | message if it doesn't
+docs/overview.md | ^# | the overview is part of the seed
+docs/milestones/SP0.md | ^# SP0: Create the GitHub repo$ | this brief is part of the seed
+.github/scripts/check.sh | milestones\.txt | the check runner reads the milestone list
+.github/scripts/check.sh | tofu | the runner uses OpenTofu, not Terraform
+milestones.txt | ^SP0$ | SP0 must be registered, or CI checks nothing on this branch

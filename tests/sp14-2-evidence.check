@@ -1,0 +1,12 @@
+# SP14 step 2: evidence/README.md indexes every file the evidence package holds.
+# Format: file | regular expression the file must contain | message if it doesn't
+evidence/README.md | ^# Evidence$ | needs an Evidence title
+evidence/README.md | ^\| *`terraform-show-before-destroy.txt` | needs a row for the show output taken before the destroy
+evidence/README.md | ^\| *`destroy.log` | needs a row for the destroy log
+evidence/README.md | ^\| *`bench-aws-raw.json` | needs a row for the raw benchmark rows
+evidence/README.md | ^\| *`bench-aws-latencies.txt` | needs a row for the latency list
+evidence/README.md | ^\| *`bench-aws-summary.txt` | needs a row for the p50 and p95 summary
+evidence/README.md | ^\| *`bench-compose-latencies.txt` | needs a row for the Compose latency list, which SP13 writes
+evidence/README.md | ^\| *`bench-compose-summary.txt` | needs a row for the Compose p50 and p95 summary, which SP13 writes
+evidence/README.md | ^\| *`cost-explorer.txt` | needs a row for the cost numbers
+evidence/README.md | ^\| *`ci-run.txt` | needs a row for the run URL the spec asks for

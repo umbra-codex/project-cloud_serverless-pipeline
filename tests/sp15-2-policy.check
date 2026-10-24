@@ -1,0 +1,7 @@
+# SP15 step 2: the published policy is the real one, both roles, with no wildcard.
+# Format: file | regular expression the file must contain | message if it doesn't
+README.md | "Sid": "ReadLanding" | the ingest policy must keep the ReadLanding statement
+README.md | "Sid": "SendEvents" | the ingest policy must keep the SendEvents statement
+README.md | "Sid": "WriteRows" | the consumer policy must keep the WriteRows statement
+README.md | "Sid": "ReadQueue" | the consumer policy must keep the ReadQueue statement
+README.md | "Resource": "arn:aws:s3:::PROJECT-landing-ACCOUNT_ID/\*" | the published policy must use placeholders, never a real bucket name
