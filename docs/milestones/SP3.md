@@ -277,6 +277,29 @@ variable, assumes it through OIDC, and prints who it became.
 | job `whoami` → step 1 | the GitHub-to-AWS credentials action, with `role-to-assume` set to the repository variable `AWS_CI_ROLE_ARN`, and `aws-region: us-east-1` |
 | job `whoami` → step 2 | `run: aws sts get-caller-identity` |
 
+The file in full — this is the whole workflow, nothing to add:
+
+```yaml
+name: oidc-check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # lets the runner ask GitHub for a token; without it the step fails on credentials
+  contents: read
+
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: aws sts get-caller-identity
+```
+
 The workflow has to be on the default branch before GitHub shows its Run button,
 and this branch must not be pushed there: it carries the provider, the role and
 the permissions, and those belong to the pull request. So finish the milestone
