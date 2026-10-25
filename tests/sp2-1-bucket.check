@@ -3,14 +3,14 @@
 # mocked plan; this one proves the arguments are written as the brief says.
 # Format: file | regular expression the file must contain | message if it doesn't
 terraform/bootstrap/storage.tf | ^resource "aws_s3_bucket" "state" \{ | the bucket must be a resource, not a CLI call
-terraform/bootstrap/storage.tf | ^  bucket = var.state_bucket$ | the name comes from the variable, so two people can run this
+terraform/bootstrap/storage.tf | ^  bucket += var.state_bucket$ | the name comes from the variable, so two people can run this
 terraform/bootstrap/storage.tf | ^resource "aws_s3_bucket_versioning" "state" \{ | versioning is its own resource in this provider
-terraform/bootstrap/storage.tf | ^    status = "Enabled"$ | versioning must be Enabled, or a corrupted state has no previous version
+terraform/bootstrap/storage.tf | ^    status += "Enabled"$ | versioning must be Enabled, or a corrupted state has no previous version
 terraform/bootstrap/storage.tf | ^resource "aws_s3_bucket_server_side_encryption_configuration" "state" \{ | encryption is its own resource too
-terraform/bootstrap/storage.tf | sse_algorithm = "AES256" | the bucket must set SSEAlgorithm AES256
+terraform/bootstrap/storage.tf | sse_algorithm += "AES256" | the bucket must set SSEAlgorithm AES256
 terraform/bootstrap/storage.tf | ^resource "aws_s3_bucket_public_access_block" "state" \{ | the public-access block is the fourth resource
-terraform/bootstrap/storage.tf | ^  block_public_acls       = true$ | all four public-access settings must be true
-terraform/bootstrap/storage.tf | ^  block_public_policy     = true$ | all four
-terraform/bootstrap/storage.tf | ^  ignore_public_acls      = true$ | all four
-terraform/bootstrap/storage.tf | ^  restrict_public_buckets = true$ | all four
+terraform/bootstrap/storage.tf | ^  block_public_acls       += true$ | all four public-access settings must be true
+terraform/bootstrap/storage.tf | ^  block_public_policy     += true$ | all four
+terraform/bootstrap/storage.tf | ^  ignore_public_acls      += true$ | all four
+terraform/bootstrap/storage.tf | ^  restrict_public_buckets += true$ | all four
 terraform/bootstrap/variables.tf | ^variable "state_bucket" \{ | the bucket name is an input

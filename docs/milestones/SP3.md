@@ -73,14 +73,16 @@ Three blocks make the identity and describe who may become it.
 | `aws_iam_openid_connect_provider.github` | `url` | `"https://token.actions.githubusercontent.com"` |
 | `aws_iam_openid_connect_provider.github` | `client_id_list` | `["sts.amazonaws.com"]` |
 | `aws_iam_role.ci_plan` | `name` | `"github-ci-plan"` |
-| `aws_iam_role.ci_plan` | `assume_role_policy` | the `.json` of the trust document below |
+| `aws_iam_role.ci_plan` | `assume_role_policy` | `data.aws_iam_policy_document.ci_plan_trust.json` — Terraform renders the trust document below into JSON for you |
+
+`assume_role_policy` takes a policy document as a JSON string: that is what `.json` produces. It is not an ARN, not a file path, and not HCL you paste in. Terraform reads the `data` block and renders its statements to JSON at plan time, so writing that block below the role changes nothing about the order it is evaluated in. This is the trust policy: who may *become* the role. What the role may then *do* comes later, with a permissions policy attached to it.
 
 The trust document has one `statement` with three parts:
 
 | Part | Set To |
 |---|---|
 | `actions` | `["sts:AssumeRoleWithWebIdentity"]` |
-| `principals` (nested block) | `type = "Federated"`, `identifiers =` the provider's `arn` |
+| `principals` (nested block) | `type = "Federated"`, `identifiers = [aws_iam_openid_connect_provider.github.arn]`. `identifiers` is a list, and that `arn` is an attribute the provider resource above creates, not an argument you supply: `arn:aws:iam::<account-id>:oidc-provider/token.actions.githubusercontent.com` |
 | `condition` (first) | `test = "StringEquals"`, `variable = "token.actions.githubusercontent.com:aud"`, `values = ["sts.amazonaws.com"]` |
 | `condition` (second) | `test = "StringEquals"`, `variable = "token.actions.githubusercontent.com:sub"`, with exactly the two values below |
 
@@ -169,12 +171,14 @@ an inline policy for the state bucket.
 | Resource | Argument | Set To |
 |---|---|---|
 | `aws_iam_role_policy_attachment.ci_plan_read_only` | `role` | the `name` of the role |
-| `aws_iam_role_policy_attachment.ci_plan_read_only` | `policy_arn` | the managed read-only policy ARN, the one ending `/ReadOnlyAccess` |
+| `aws_iam_role_policy_attachment.ci_plan_read_only` | `policy_arn` | `"arn:aws:iam::aws:policy/ReadOnlyAccess"` — the AWS-managed policy, so `aws` sits where an account ID would |
 | `aws_iam_role_policy.ci_plan_state` | `name` | `"state-bucket"` |
 | `aws_iam_role_policy.ci_plan_state` | `role` | the `id` of the role |
 | `aws_iam_role_policy.ci_plan_state` | `policy` | the `.json` of the second policy document |
 
-The policy document has two statements:
+`aws_iam_role_policy_attachment` attaches a policy that already exists; it does not create one. `policy_arn` names that policy — an AWS-managed ARN here, or a customer-managed one if you had built it yourself. It is not the role's ARN and not a JSON document: inline JSON is what `aws_iam_role_policy` takes, the third block below, which writes a policy instead of referencing one. `role` takes the role's name, and `ReadOnlyAccess` is account-independent, so this line is identical in every account.
+
+Those two statements belong in the **`data` block** — `data.aws_iam_policy_document.ci_plan_state` — not in the resource. The resource `aws_iam_role_policy.ci_plan_state` holds no statements at all: it holds `name = "state-bucket"`, `role` = the role's `id`, and `policy = data.aws_iam_policy_document.ci_plan_state.json`. One block authors the document, the other attaches it to the role.
 
 | Statement | `actions` | `resources` |
 |---|---|---|
