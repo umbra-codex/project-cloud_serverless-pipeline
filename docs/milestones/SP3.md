@@ -171,12 +171,14 @@ an inline policy for the state bucket.
 | Resource | Argument | Set To |
 |---|---|---|
 | `aws_iam_role_policy_attachment.ci_plan_read_only` | `role` | the `name` of the role |
-| `aws_iam_role_policy_attachment.ci_plan_read_only` | `policy_arn` | the managed read-only policy ARN, the one ending `/ReadOnlyAccess` |
+| `aws_iam_role_policy_attachment.ci_plan_read_only` | `policy_arn` | `"arn:aws:iam::aws:policy/ReadOnlyAccess"` — the AWS-managed policy, so `aws` sits where an account ID would |
 | `aws_iam_role_policy.ci_plan_state` | `name` | `"state-bucket"` |
 | `aws_iam_role_policy.ci_plan_state` | `role` | the `id` of the role |
 | `aws_iam_role_policy.ci_plan_state` | `policy` | the `.json` of the second policy document |
 
-The policy document has two statements:
+`aws_iam_role_policy_attachment` attaches a policy that already exists; it does not create one. `policy_arn` names that policy — an AWS-managed ARN here, or a customer-managed one if you had built it yourself. It is not the role's ARN and not a JSON document: inline JSON is what `aws_iam_role_policy` takes, the third block below, which writes a policy instead of referencing one. `role` takes the role's name, and `ReadOnlyAccess` is account-independent, so this line is identical in every account.
+
+Those two statements belong in the **`data` block** — `data.aws_iam_policy_document.ci_plan_state` — not in the resource. The resource `aws_iam_role_policy.ci_plan_state` holds no statements at all: it holds `name = "state-bucket"`, `role` = the role's `id`, and `policy = data.aws_iam_policy_document.ci_plan_state.json`. One block authors the document, the other attaches it to the role.
 
 | Statement | `actions` | `resources` |
 |---|---|---|
