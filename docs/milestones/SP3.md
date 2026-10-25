@@ -73,14 +73,16 @@ Three blocks make the identity and describe who may become it.
 | `aws_iam_openid_connect_provider.github` | `url` | `"https://token.actions.githubusercontent.com"` |
 | `aws_iam_openid_connect_provider.github` | `client_id_list` | `["sts.amazonaws.com"]` |
 | `aws_iam_role.ci_plan` | `name` | `"github-ci-plan"` |
-| `aws_iam_role.ci_plan` | `assume_role_policy` | the `.json` of the trust document below |
+| `aws_iam_role.ci_plan` | `assume_role_policy` | `data.aws_iam_policy_document.ci_plan_trust.json` — Terraform renders the trust document below into JSON for you |
+
+`assume_role_policy` takes a policy document as a JSON string: that is what `.json` produces. It is not an ARN, not a file path, and not HCL you paste in. Terraform reads the `data` block and renders its statements to JSON at plan time, so writing that block below the role changes nothing about the order it is evaluated in. This is the trust policy: who may *become* the role. What the role may then *do* comes later, with a permissions policy attached to it.
 
 The trust document has one `statement` with three parts:
 
 | Part | Set To |
 |---|---|
 | `actions` | `["sts:AssumeRoleWithWebIdentity"]` |
-| `principals` (nested block) | `type = "Federated"`, `identifiers =` the provider's `arn` |
+| `principals` (nested block) | `type = "Federated"`, `identifiers = [aws_iam_openid_connect_provider.github.arn]`. `identifiers` is a list, and that `arn` is an attribute the provider resource above creates, not an argument you supply: `arn:aws:iam::<account-id>:oidc-provider/token.actions.githubusercontent.com` |
 | `condition` (first) | `test = "StringEquals"`, `variable = "token.actions.githubusercontent.com:aud"`, `values = ["sts.amazonaws.com"]` |
 | `condition` (second) | `test = "StringEquals"`, `variable = "token.actions.githubusercontent.com:sub"`, with exactly the two values below |
 
