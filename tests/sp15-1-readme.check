@@ -22,7 +22,7 @@ README.md | 60 to 90 | must state the length of the failure capture
 README.md | why this can't run away | must state the "why this can't run away" line
 README.md | reserved_concurrent_executions | must name the per-function concurrency cap
 README.md | maximum_concurrency | must name the mapping's own concurrency cap
-README.md | include_credit = false | must explain that the budget excludes credits
+README.md | include_credit += false | must explain that the budget excludes credits
 README.md | check-destroyed\.sh | must point at the script that confirms the destroy
 README.md | github\.com/OWNER/project-cloud_serverless-pipeline/releases | must link the capture as a Release asset, not a committed file
 README.md | ^\| `s3:GetObject` | the action table needs a s3:GetObject row
