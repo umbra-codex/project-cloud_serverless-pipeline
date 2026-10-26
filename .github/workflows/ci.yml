@@ -1,0 +1,85 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version: 1.13.1
+
+      - run: tofu fmt -check -recursive
+
+      - name: Validate
+        run: |
+          tofu -chdir=terraform init -backend=false -input=false
+          tofu -chdir=terraform validate -no-color
+
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: v0.64.0
+
+      - name: tflint
+        run: |
+          tflint --init
+          tflint --recursive --config "$(pwd)/.tflint.hcl"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: bridgecrewio/checkov-action@v12.2915.0
+        with:
+          directory: terraform
+          framework: terraform
+          soft_fail: false
+
+  plan:
+    name: plan
+    needs: static
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version: 1.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build Lambda bundles
+        run: |
+          for dir in src/*/; do
+            [ -f "$dir/package.json" ] || continue
+            ( cd "$dir" && npm ci && npm run build )
+          done
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - run: tofu -chdir=terraform init
+
+      - run: tofu -chdir=terraform plan -no-color -input=false
