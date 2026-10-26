@@ -1,4 +1,4 @@
-# SP6 step 5: the references the mock provider cannot evaluate. It returns a
+# SP6 step 3: the references the mock provider cannot evaluate. It returns a
 # value for every attribute, so these three are checked as text.
 # Format: file | regular expression the file must contain | message if it doesn't
 terraform/ingest.tf | assume_role_policy *= *data.aws_iam_policy_document\.lambda_assume\.json | the role must use the trust-policy document's json

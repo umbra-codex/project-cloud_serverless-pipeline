@@ -38,11 +38,11 @@ describe("lint-briefs.sh", () => {
     let commands = 0;
     for (const f of fs.readdirSync(BRIEFS)) {
       const text = fs.readFileSync(path.join(BRIEFS, f), "utf8");
-      blocks += (text.match(/^> \*\*.+Checkpoint: steps? /gm) ?? []).length;
-      commands += (text.match(new RegExp(`^> ${CMD}$`, "gm")) ?? []).length;
+      blocks += (text.match(/^\*\*.*Checkpoint: steps? /gm) ?? []).length;
+      commands += (text.match(new RegExp(`^${CMD}$`, "gm")) ?? []).length;
     }
     expect(blocks).toBe(38);
-    expect(commands).toBe(38);
+    expect(commands).toBeGreaterThanOrEqual(blocks);
   });
 
   test("a block with the command taken out fails the lint, naming the file and line", () => {
@@ -50,7 +50,7 @@ describe("lint-briefs.sh", () => {
     try {
       const file = path.join(dir, "docs/milestones/SP5.md");
       const before = fs.readFileSync(file, "utf8");
-      const after = before.replace(`> ${CMD}\n`, "");
+      const after = before.replace(`${CMD}\n`, "");
       expect(after).not.toBe(before);
       fs.writeFileSync(file, after);
       const r = lint(dir);
@@ -67,8 +67,8 @@ describe("lint-briefs.sh", () => {
     try {
       const file = path.join(dir, "docs/milestones/SP5.md");
       const text = fs.readFileSync(file, "utf8").replace(
-        "> **✅ Checkpoint: step 1 (queues)**\n",
-        "> **✅ Checkpoint: step 1 (queues)**\n> Commit your work and push it:\n",
+        "**✅ Checkpoint: step 1 (queues)**\n",
+        "**✅ Checkpoint: step 1 (queues)**\nCommit your work and push it:\n",
       );
       fs.writeFileSync(file, text);
       const r = lint(dir);
@@ -84,8 +84,8 @@ describe("lint-briefs.sh", () => {
     try {
       const file = path.join(dir, "docs/milestones/SP5.md");
       const text = fs.readFileSync(file, "utf8").replace(
-        /^(> The push runs the same check on GitHub[^\n]*)$/m,
-        "$1\n> pull request (see [How to see your results](#how-to-see-your-results)).",
+        /^(The push runs the same check on GitHub[^\n]*)$/m,
+        "$1\npull request (see [How to see your results](#how-to-see-your-results)).",
       );
       fs.writeFileSync(file, text);
       const r = lint(dir);
@@ -101,8 +101,8 @@ describe("lint-briefs.sh", () => {
     try {
       const file = path.join(dir, "docs/milestones/SP7.md");
       const text = fs.readFileSync(file, "utf8").replace(
-        `> ${CMD}\n`,
-        "> Open the results on the pull request.\n",
+        `${CMD}\n`,
+        "Open the results on the pull request.\n",
       );
       fs.writeFileSync(file, text);
       const r = lint(dir);

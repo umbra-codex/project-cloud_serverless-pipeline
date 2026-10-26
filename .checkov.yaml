@@ -21,8 +21,10 @@ skip-check:
   # The environment variables hold a queue URL and a table name. There is no
   # secret in either, so a KMS key for them protects nothing.
   - CKV_AWS_173
-  # The table is encrypted with an AWS-owned key and lives for hours. A customer
-  # managed key bills per month whether or not the table exists.
+  # The table sets enabled = true with no kms_key_arn, so it uses the AWS
+  # managed key (alias/aws/dynamodb). KMS requests for that key bill per request,
+  # which is negligible for a stack that lives hours. A customer managed key is
+  # skipped because it bills by the month whether or not the table is read.
   - CKV_AWS_119
   # One Region on purpose: this stack is evidence for a local benchmark, not a
   # service with a recovery objective. Replication would double the storage bill.
@@ -34,10 +36,12 @@ skip-check:
   # is built by the same pipeline that deploys it, so signing adds a step
   # without closing a path an attacker could use here.
   - CKV_AWS_272
-  # The consumer's failures are already captured twice: the queue's redrive
-  # policy sends a message to the dead-letter queue after five receives, and the
-  # event source mapping reports per-message failures. A Lambda destination on
-  # top of that would be a third path for the same error.
+  # Neither function needs a destination. The consumer's failures are already
+  # captured twice: the queue's redrive policy sends a message to the
+  # dead-letter queue after five receives, and the event source mapping reports
+  # per-message failures. The ingest function is invoked by S3 and has no
+  # on-failure destination: SP6 documents that gap in the README's blast-radius
+  # section rather than adding a resource the guide would have to explain.
   - CKV_AWS_116
   # Tracing is the A-grade elevation and it is planned for the compose runtime,
   # where a trace can be kept. On the AWS side the stack is destroyed before the

@@ -104,7 +104,7 @@ pointer() { # $1 = milestone, $2 = step
       gsub(/[^0-9]+/, " ", seg)
       return seg
     }
-    /^> \*\*/ && index(tolower($0), "checkpoint") {
+    /^>? ?\*\*/ && index(tolower($0), "checkpoint") {
       seg = range(tolower($0))
       if (seg != "") {
         split(seg, r, " ")
@@ -131,7 +131,7 @@ pointer() { # $1 = milestone, $2 = step
     # Otherwise the last block before this step: its section is still the one
     # to read, because the step builds on it.
     lineno=$(awk -v want="$2" '
-      /^> \*\*/ && index(tolower($0), "checkpoint") {
+      /^>? ?\*\*/ && index(tolower($0), "checkpoint") {
         s = $0
         gsub(/[^0-9]+/, " ", s)
         n = split(s, parts, " ")

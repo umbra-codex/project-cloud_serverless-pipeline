@@ -6,6 +6,7 @@ README.md | ^## What this is$ | needs the section that says what it is
 README.md | ^## Architecture$ | needs the architecture section
 README.md | ^## Proof it works$ | needs the section that names what proves it works
 README.md | ^## Decisions$ | needs the trade-offs, one line per decision
+README.md | ^- [0-9]{4}-[0-9]{2}-[0-9]{2}: | the decision log needs dated lines
 README.md | ^## Cost and teardown$ | needs what it cost and how it was torn down
 README.md | ^## Run it yourself$ | needs the instructions that start it
 README.md | ^## What you can verify yourself$ | needs the section that splits checkable claims from captured evidence

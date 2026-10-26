@@ -2,16 +2,16 @@
 # consumer group, an acknowledgement, a delivery count, and a dead-letter stream.
 # Format: file | regular expression the file must contain | message if it doesn't
 compose/worker/index.ts | ON CONFLICT DO NOTHING | the insert must ignore a duplicate key, which is the conditional put
-compose/worker/index.ts | INSERT INTO events \(idempotency_key, payload, landed_at\) | must insert one row per message, with the landing time the latency math needs
+compose/worker/index.ts | INSERT INTO events[[:space:]]*\([[:space:]]*idempotency_key,[[:space:]]*payload,[[:space:]]*landed_at[[:space:]]*\) | must insert one row per message, with the landing time the latency math needs
 compose/worker/index.ts | xGroupCreate\("events", "workers", "0", \{ MKSTREAM: true \}\) | must set up the consumer group once, building the stream if needed
 compose/worker/index.ts | BUSYGROUP | must ignore the BUSYGROUP error a restart produces
 compose/worker/index.ts | xReadGroup\("workers", WORKER_ID | must read new messages with the consumer group
 compose/worker/index.ts | xAutoClaim\("events", "workers", WORKER_ID, CLAIM_IDLE_MS, "0" | must claim idle pending messages back, which is the visibility timeout
-compose/worker/index.ts | xPendingRange\("events", "workers", msg\.id, msg\.id, 1\) | must read the per-message delivery count with a ranged XPENDING, not the aggregate form
+compose/worker/index.ts | xPendingRange\("events", "workers", [A-Za-z_$][A-Za-z0-9_$]*\.id, [A-Za-z_$][A-Za-z0-9_$]*\.id, 1\) | must read the per-message delivery count with a ranged XPENDING, not the aggregate form
 compose/worker/index.ts | deliveriesCounter | must read the delivery count from the pending entry
 compose/worker/index.ts | MAX_DELIVERIES += 5 | the retry limit must be 5, the same number as maxReceiveCount
-compose/worker/index.ts | xAdd\("events-dead", "\*", msg\.message\) | must move a message that hit the limit to the dead-letter stream
-compose/worker/index.ts | xAck\("events", "workers", msg\.id\) | must acknowledge a message after writing it, and after dead-lettering it
+compose/worker/index.ts | xAdd\("events-dead", "\*", [A-Za-z_$][A-Za-z0-9_$]*\.message\) | must move a message that hit the limit to the dead-letter stream
+compose/worker/index.ts | xAck\("events", "workers", [A-Za-z_$][A-Za-z0-9_$]*\.id\) | must acknowledge a message after writing it, and after dead-lettering it
 compose/worker/package.json | "redis": "\^5\.0\.0" | the worker must use redis 5, the major the reference build runs
 compose/worker/Dockerfile | ^RUN npm install$ | the build must install dependencies without a lock, because these folders commit none
 compose/worker/Dockerfile | !^RUN npm ci$ | npm ci needs a lock file, and this folder has none

@@ -6,52 +6,44 @@
 | **Branch** | `sp1-aws` |
 | **Depends on** | SP0, merged. The repository exists and the check runs in it |
 | **Files you touch** | `milestones.txt` |
-| **Check** | Runs in this repo on every push to `sp1-aws`, and locally with `.github/scripts/check.sh SP1`. Use this exact branch name |
+| **Check** | Runs in this repo on every push to `sp1-aws`, and locally with `bash .github/scripts/check-local.sh`. Use this exact branch name |
 
 ## Goal
 
-An AWS session you can prove, an account number written down somewhere you will
-find it in SP12, and the first milestone registered in the repository that SP0
-created. Every ARN in this guide contains that account number, and SP2 puts it in
-a bucket name that is unique because of it.
+An AWS session you can prove, an account number written down somewhere you will find it in SP12, and the first milestone registered in the repository that SP0 created. Every ARN in this guide contains that account number, and SP2 puts it in a bucket name that is unique because of it.
 
-Nothing here touches the pipeline, and this milestone has no file of its own. The
-account is the artifact, which is why the check cannot see it and the steps below
-are yours.
+Nothing here touches the pipeline, and this milestone has no file of its own. The account is the artifact, which is why the check cannot see it and the steps below are yours.
 
 ## Part 1: AWS access
 
-No files. Two commands and one number you write down.
+No files. Four steps, and a number you write down.
 
-1. Sign in the way this account expects. If `aws sts get-caller-identity` fails
-   with an expired session, re-authenticate first; the exact command depends on
-   how the account is set up (an SSO profile, `aws login`, or a key you manage),
-   and this guide does not guess it.
+1. Get a session. If `aws --version` fails, install the CLI first: SP0's table has the line. Then pick one of the two routes that work for a personal account:
+   - **An SSO profile, which is the one to prefer.** `aws configure sso` once, then `aws sso login` at the start of every sitting, and `export AWS_PROFILE=<the profile name>`. The login is a browser flow and it expires, which is the point: nothing long-lived is on disk.
+   - **An access key for a throwaway IAM user.** `aws configure`, then paste the key when it asks. It works and it is simpler; the key is a long-lived secret, so create the user for this account only.
+   Use neither the root user's credentials nor a key for the root account: create an IAM user or an Identity Center user for this work. Set the region while you are here, because SP2 to SP14 assume it, and set it in the profile rather than with an `export`: an exported variable lasts until you close the terminal, while the profile's region is read by every later `aws` command that uses it; `export AWS_PROFILE=<name>` in each new terminal.
+
+```bash
+aws configure set region us-east-1
+```
+
 2. Confirm the identity and note the **Account** value.
 
 ```bash
 aws sts get-caller-identity
 ```
 
-Expected: a JSON object with `UserId`, `Account`, and `Arn`. If the `Account` is
-not the one you expect, stop: the rest of the guide writes resources into
-whatever account this command names.
+Expected: a JSON object with `UserId`, `Account`, and `Arn`. If the `Account` is not the one you expect, stop: the rest of the guide writes resources into whatever account this command names.
 
-3. Read the credit balance and its expiry date in the Billing console. The
-   program treats the balance as the limit, not a calendar date, and SP12 to SP14
-   are the milestones that spend anything.
+3. Read the credit balance and its expiry date in the Billing console (**Billing and Cost Management**, then **Credits**). The free plan ends at whichever comes first: six months after the account was created, or the day the credits run out. For this account that is 2026-11-05, and SP12 to SP14 are the milestones that spend anything. Write both dates down.
 
-> **Note, not a checkpoint.** There is no file to save and nothing for the
-> check to read here. The proof is the command above printing an account you
-> recognize, and the balance written down somewhere you will find it in SP12.
-> The checkpoint of this milestone comes at the end of Part 2.
+4. Turn on Cost Explorer while you are in the console (**Cost Explorer**, then **Launch**). It keeps no data until it is enabled, and the first day's figures take about 24 hours to appear, which is why SP13 cannot copy them the same day it benchmarks.
+
+> **Note, not a checkpoint.** There is no file to save and nothing for the check to read here. The proof is the command above printing an account you recognize, and the balance written down somewhere you will find it in SP12. The checkpoint of this milestone comes at the end of Part 2.
 
 ## Part 2: Your branch, and the registration
 
-The repository from SP0 holds the scaffold and the check, and `milestones.txt`
-holds two comment lines and one ID. A milestone registers itself in the pull
-request that builds it, and this is the first milestone after the scaffold, so
-this is the first registration you make.
+The repository from SP0 holds the scaffold and the check, and `milestones.txt` holds two comment lines and one ID. A milestone registers itself in the pull request that builds it, and this is the first milestone after the scaffold, so this is the first registration you make.
 
 ```bash
 git checkout main
@@ -62,25 +54,24 @@ git add milestones.txt && git commit -m "chore(sp1): register SP1"
 git push -u origin sp1-aws
 ```
 
-Expected: `tail -3 milestones.txt` prints `SP0`, then `SP1`, and the branch exists
-on the remote with one commit on it.
+Expected: `tail -3 milestones.txt` prints `SP0`, then `SP1`, and the branch exists on the remote with one commit on it.
 
-Nothing else changes in the repository. From here the check runs SP1 on this
-branch, and it keeps re-running SP0 on every push, because every registered
-milestone is re-checked.
+Nothing else changes in the repository. From here the check runs SP1 on this branch, and it keeps re-running SP0 on every push, because every registered milestone is re-checked.
 
-> **✅ Checkpoint: step 1 (register)**
-> Run the check in your terminal before you open the pull request:
-> ```bash
-> bash .github/scripts/check-local.sh
-> ```
-> Expected: `SP1 step 1 (register)` ✅, `SP0` still ✅ underneath it, and the summary says `👍 SP1 passed.` If the row is ❌, the `Next:` line under the summary names what the check looked for: fix `milestones.txt` and run the same command again, with no commit and no push.
-> Then open this milestone's draft pull request:
-> ```bash
-> gh pr create --fill --draft
-> ```
-> The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [How to see your results](#how-to-see-your-results) explains both tiers.
-> Step 1 turns ✅.
+**✅ Checkpoint: step 1 (register)**
+Run the check in your terminal before you open the pull request:
+
+```bash
+bash .github/scripts/check-local.sh
+```
+
+Expected: `SP1 step 1 (register)` ✅, `SP0` still ✅ underneath it, and the summary says `👍 SP1 passed.` If the row is ❌, the `Next:` line under the summary names what the check looked for: fix `milestones.txt` and run the same command again, with no commit and no push. Then open this milestone's draft pull request:
+
+```bash
+gh pr create --fill --draft
+```
+
+The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [How to see your results](#how-to-see-your-results) explains both tiers. Step 1 turns ✅.
 
 ## Check it
 
@@ -113,6 +104,8 @@ Also failing: its own key, so the pipeline destroy in SP14 cannot reach it; nati
 Run bash .github/scripts/check-local.sh --explain for the full output.
 ```
 
+Two things about that sample. It is an **SP2** run, shown here because SP1 has a single row and nothing to read, while SP2 is the first milestone with more than one step and so the first with a failure to read. And `SP2 step 1 (bucket)` appears twice on purpose: SP2 and SP3 run two check files for step 1, a text read and a mocked plan, so both rows have to be ✅.
+
 Read it in four rungs, in this order:
 
 1. **Which step.** The row marked `<- next` is the first one to fix. The rows above it are already green. The rows below it are the steps you have not built yet, and they turn ✅ as you go.
@@ -131,7 +124,7 @@ Read it in four rungs, in this order:
 
 Then fix the file and run the same command again. No commit, no push, no waiting for GitHub: that is the loop, and once the providers are installed it takes about a minute a turn.
 
-The count in the summary line counts **check files**, not steps. SP2 and SP3 run two files for step 1, one text read and one mocked plan, so step 1 appears twice and both rows have to be ✅.
+The count in the summary line counts **check files**, not steps, which is why one step can occupy two rows.
 
 **On GitHub, once per milestone, before `gh pr ready`.** GitHub is the authority. A green run in your terminal is a preview of the same check, and the two can disagree: your OpenTofu version may not be CI's, and GitHub checks what you pushed rather than what you have on disk. The push at your last checkpoint already started the check there, so run this once, from the same folder:
 
@@ -155,21 +148,16 @@ The check runs this milestone in the steps below, one file each:
 
 Reading a failure:
 
-- **Step 1 ❌ on `milestones.txt`**: the line is missing or it reads something
-  else. `tail milestones.txt` shows what the last commit added.
-- **Step 1 ❌ on `docs/milestones/SP1.md`**: the seed from SP0 did not land. Go
-  back to `LANDING.md` rather than creating the file by hand.
+- **Step 1 ❌ on `milestones.txt`**: the line is missing or it reads something else. `tail milestones.txt` shows what the last commit added.
+- **Step 1 ❌ on `docs/milestones/SP1.md`**: the seed from SP0 did not land. Go back to SP0 Part 2 and re-run the copies rather than creating the file by hand.
 
 ## Done when (things only the console can show)
 
 The check cannot see GitHub or the AWS account, so these are yours:
 
-1. `aws sts get-caller-identity` prints the account you expect, and you wrote the
-   **Account** value down.
-2. The Billing console shows a credit balance and an expiry date, and you wrote
-   both down. SP12 is the first milestone that can spend anything.
-3. The Actions tab shows the run for `sp1-aws`, with step 1 green and SP0 still
-   green under it.
+1. `aws sts get-caller-identity` prints the account you expect, and you wrote the **Account** value down.
+2. The Billing console shows a credit balance and an expiry date, and you wrote both down, and Cost Explorer is enabled. SP12 is the first milestone that can spend anything.
+3. The Actions tab shows the run for `sp1-aws`, with step 1 green and SP0 still green under it.
 
 ## Mark the pull request ready
 One last look at the check on GitHub, which is the authority here. It follows the run your last push started, so it needs no new commit and no push:
@@ -185,6 +173,16 @@ gh pr edit --title "chore(sp1): register SP1 and prove the AWS session"
 gh pr ready
 ```
 
-Expected: one pull request, `chore(sp1): register SP1 and prove the AWS session`,
-merged by you after the check is green. SP2 starts from `main` after this merge,
-with the account number in hand.
+Expected: one pull request, `chore(sp1): register SP1 and prove the AWS session`, merged by you after the check is green. SP2 starts from `main` after this merge, with the account number in hand.
+
+## After the merge
+
+Merge the pull request on GitHub, then clean up the branch:
+
+```bash
+git switch main && git pull
+git branch -d sp1-aws
+git fetch --prune
+```
+
+`git branch -d` refuses after a squash merge, because the branch's commits are not in `main`; `git branch -D sp1-aws` is the same delete. The remote branch is already gone: `delete_branch_on_merge` removes it when the pull request merges.

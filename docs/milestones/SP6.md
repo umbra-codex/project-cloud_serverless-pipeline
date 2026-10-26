@@ -5,31 +5,23 @@
 | **Milestone** | SP6: Ingest function and S3 trigger |
 | **Branch** | `sp6-ingest` |
 | **Depends on** | SP5, merged |
-| **Files you touch** | `terraform/s3.tf`, `terraform/ingest.tf`, `terraform/trigger.tf`, `terraform/backend.tf` (one provider added), `.gitignore`, `terraform/outputs.tf`, and four new files under `src/ingest/` |
-| **Check** | Runs in this repo on every push to `sp6-ingest`, and locally with `.github/scripts/check.sh SP6`. Use this exact branch name |
+| **Files you touch** | `terraform/s3.tf`, `terraform/ingest.tf`, `terraform/trigger.tf`, `terraform/backend.tf` (one provider added), `terraform/outputs.tf`, and four new files under `src/ingest/` |
+| **Check** | Runs in this repo on every push to `sp6-ingest`, and locally with `bash .github/scripts/check-local.sh`. Use this exact branch name |
 
 ## Goal
 
-An object lands in a bucket, S3 invokes a function once per object, and the
-function turns each object into one queue message that carries the time S3 saw it
-land. That landing time is the clock every latency number in this project starts
-from, so it comes from the event, never from the function's own clock.
+An object lands in a bucket, S3 invokes a function once per object, and the function turns each object into one queue message that carries the time S3 saw it land. That landing time is the clock every latency number in this project starts from, so it comes from the event, never from the function's own clock.
 
-You also build the packaging path here: TypeScript in `src/ingest/`, compiled to
-`dist/`, zipped by the archive provider, deployed by the function resource. Both
-later functions and the Compose services follow the same layout.
+You also build the packaging path here: TypeScript in `src/ingest/`, compiled to `dist/`, zipped by the archive provider, deployed by the function resource. Both later functions and the Compose services follow the same layout.
 
 ## Before step 1: two installs, and they are yours to approve
 
-This milestone installs npm packages into `src/ingest/` and downloads one
-Terraform provider, `hashicorp/archive`. Both are installs, so both need a yes
-from you before Part 2:
+This milestone installs npm packages into `src/ingest/` and downloads one Terraform provider, `hashicorp/archive`. Both are installs, so both need a yes from you before Part 2:
 
-- `npm install` writes `src/ingest/node_modules/` and `package-lock.json` from the
-  manifest in Part 4. Nothing is installed globally, and the SDK stays a
-  devDependency because the `nodejs24.x` runtime already ships SDK v3.
-- `tofu init` downloads `hashicorp/archive` from the registry, exactly as it
-  already downloaded `hashicorp/aws` in SP4.
+- `npm install` writes `src/ingest/node_modules/` and `package-lock.json` from the manifest in Part 4. Nothing is installed globally, and the SDK stays a devDependency because the `nodejs24.x` runtime already ships SDK v3.
+- `tofu init` downloads `hashicorp/archive` from the registry, exactly as it already downloaded `hashicorp/aws` in SP2.
+
+Why two package managers: `npm` builds the zips, because the Lambda runtime is Node and `tsc` is the whole build; `bun test` runs the handler steps, because Bun runs TypeScript with no build step and no bundler. Each does one job here, and neither replaces the other.
 
 Nothing in this milestone spends money or touches AWS: it is plan-only.
 
@@ -76,10 +68,7 @@ git push -u origin sp6-ingest
 
 **Docs:** [aws_s3_bucket](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/s3_bucket) · [Bucket naming rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
 
-Bucket names are global across every account, so the account id is what keeps
-yours from colliding with a stranger's. `force_destroy` is a demo-stack choice:
-SP14 destroys this stack the same day, and a bucket that refuses to empty itself
-turns a five-minute destroy into an afternoon.
+Bucket names are global across every account, so the account id is what keeps yours from colliding with a stranger's. `force_destroy` is a demo-stack choice: SP14 destroys this stack the same day, and a bucket that refuses to empty itself turns a five-minute destroy into an afternoon.
 
 #### 3. Versioning
 
@@ -96,9 +85,7 @@ turns a five-minute destroy into an afternoon.
 
 **Docs:** [aws_s3_bucket_versioning](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/s3_bucket_versioning)
 
-Versioning is what makes the duplicate test honest: re-uploading an object to the
-same key makes a second version, and the event still names the same key. It also
-gives you the previous version of anything you overwrite by accident.
+Versioning is what makes the duplicate test honest: re-uploading an object to the same key makes a second version, and the event still names the same key. It also gives you the previous version of anything you overwrite by accident.
 
 #### 4. Encryption
 
@@ -116,9 +103,7 @@ gives you the previous version of anything you overwrite by accident.
 
 **Docs:** [aws_s3_bucket_server_side_encryption_configuration](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/s3_bucket_server_side_encryption_configuration)
 
-`AES256` is SSE-S3, which costs nothing. SSE-KMS is the alternative and it adds a
-charge per request plus a key policy to maintain, for a bucket that exists for a
-day.
+`AES256` is SSE-S3, which costs nothing. SSE-KMS is the alternative and it adds a charge per request plus a key policy to maintain, for a bucket that exists for a day.
 
 #### 5. Public access blocked
 
@@ -138,31 +123,30 @@ day.
 
 **Docs:** [aws_s3_bucket_public_access_block](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/s3_bucket_public_access_block)
 
-All four, not one. The four settings close four different paths, and a bucket
-with three of them is a bucket somebody can still make public by accident.
+All four, not one. The four settings close four different paths, and a bucket with three of them is a bucket somebody can still make public by accident.
 
-> **✅ Checkpoint: step 1 (s3)**
-> Save `s3.tf`, then run the check in your terminal before you commit:
-> ```bash
-> bash .github/scripts/check-local.sh
-> ```
-> Expected: `SP6 step 1 (s3)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line under the summary names the brief section to re-read and what the check looked for: fix the file and run the same command again, with no commit and no push.
-> Then format, commit, and push:
-> ```bash
-> tofu fmt -recursive
-> git add -A && git commit -m "feat(sp6): add the landing bucket" && git push
-> gh pr create --fill --draft
-> ```
-> The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers.
-> Step 1 turns ✅. Steps 2 to 8 stay ❌.
+**✅ Checkpoint: step 1 (s3)**
+Save `s3.tf`, then run the check in your terminal before you commit:
+
+```bash
+bash .github/scripts/check-local.sh
+```
+
+Expected: `SP6 step 1 (s3)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line names the section to re-read: fix it and run the same command again before committing. Then format, commit, and push:
+
+```bash
+tofu fmt -recursive
+git add -A && git commit -m "feat(sp6): add the landing bucket" && git push
+gh pr create --fill --draft
+```
+
+The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers. Step 1 turns ✅. Steps 2 to 8 stay ❌.
 
 ## Part 2: The ingest function
 
 ### `backend.tf`: the archive provider
 
-`archive_file` comes from a second provider, so the existing
-`required_providers` block gains one entry. A second `required_providers` block
-is an error, so this goes in the file that already has one.
+`archive_file` comes from a second provider, so the existing `required_providers` block gains one entry. A second `required_providers` block is an error, so this goes in the file that already has one.
 
 | Block Type | Block | Entry to add |
 |---|---|---|
@@ -170,20 +154,13 @@ is an error, so this goes in the file that already has one.
 
 **Docs:** [archive provider](https://registry.terraform.io/providers/hashicorp/archive/2.8.1/docs)
 
-`tofu init` after this edit rewrites `.terraform.lock.hcl` with the archive
-provider's checksums. Commit that file with the change: the lock file is tracked
-in this repository, locally and in CI, and an uncommitted lock is how a plan job
-and this machine end up resolving different providers.
+`tofu init` after this edit rewrites `.terraform.lock.hcl` with the archive provider's checksums. Commit that file with the change: the lock file is tracked in this repository, locally and in CI, and an uncommitted lock is how a plan job and this machine end up resolving different providers.
 
 ### First, a source directory that builds
 
-`archive_file` plans against `../src/ingest/dist`. A plan fails when that
-directory is missing, and CI plans on every push, so the directory and a build
-have to exist before this part's checkpoint.
+`archive_file` plans against `../src/ingest/dist`. A plan fails when that directory is missing, and CI plans on every push, so the directory and a build have to exist before this part's checkpoint.
 
-Write `src/ingest/package.json` and `src/ingest/tsconfig.json` from the two tables
-in Part 4 now (they are the same files; Part 4 does not repeat them), add one
-placeholder `index.ts`, and build:
+Write `src/ingest/package.json` and `src/ingest/tsconfig.json` with the settings items 15 and 16 give, add one placeholder `index.ts`, and build:
 
 ```bash
 mkdir -p src/ingest
@@ -195,16 +172,11 @@ cd ../..
 ls src/ingest/dist
 ```
 
-Expected: `index.js`. This is the checkpoint that introduces `npm install`, the
-lock file, and the build. From here on, CI's `npm ci` has a lock file to read and
-`plan` has a directory to zip. Part 4 replaces the placeholder with the real
-handler and the SDK wiring, then rebuilds.
+Expected: `index.js`. This is the checkpoint that introduces `npm install`, the lock file, and the build. From here on, CI's `npm ci` has a lock file to read and `plan` has a directory to zip. Part 4 replaces the placeholder with the real handler and the SDK wiring, then rebuilds.
 
 ### ingest.tf
 
-Seven blocks: a log group, a trust policy document, the role, the role's
-permissions, the inline policy, the zip, and the function itself. Write them in
-that order; the function refers to all of them.
+Seven blocks: a log group, a trust policy document, the role, the role's permissions, the inline policy, the zip, and the function itself. Write them in that order; the function refers to all of them.
 
 #### 6. The log group
 
@@ -222,8 +194,7 @@ that order; the function refers to all of them.
 
 **Docs:** [aws_cloudwatch_log_group](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/cloudwatch_log_group) · [Log retention](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)
 
-Terraform owns the group so that it has a retention period and dies with the
-stack. A group Lambda makes for itself has neither, and it outlives the destroy.
+Terraform owns the group so that it has a retention period and dies with the stack. A group Lambda makes for itself has neither, and it outlives the destroy.
 
 #### 7. The trust policy
 
@@ -242,9 +213,7 @@ stack. A group Lambda makes for itself has neither, and it outlives the destroy.
 
 **Docs:** [aws_iam_policy_document](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/data-sources/iam_policy_document) · [Role terms](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_terms-and-concepts.html)
 
-A trust policy says who may become the role. This one names the Lambda service
-and nothing else, so no person and no other service can use these permissions.
-SP7's role reuses this document rather than declaring a second copy.
+A trust policy says who may become the role. This one names the Lambda service and nothing else, so no person and no other service can use these permissions. SP7's role reuses this document rather than declaring a second copy.
 
 #### 8. The role
 
@@ -268,8 +237,7 @@ SP7's role reuses this document rather than declaring a second copy.
 **Data Source Type:** `aws_iam_policy_document`
 **Data Source Name:** `ingest_permissions`
 
-Three statements, each with a `sid`, an `effect` of `"Allow"`, `actions`, and
-`resources`:
+Three statements, each with a `sid`, an `effect` of `"Allow"`, `actions`, and `resources`:
 
 | Statement `sid` | `actions` | `resources` |
 |---|---|---|
@@ -281,13 +249,7 @@ Three statements, each with a `sid`, an `effect` of `"Allow"`, `actions`, and
 
 **Docs:** [IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html) · [Lambda execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
 
-Three statements and no wildcards, because the handler makes exactly three kinds
-of call: read one object, send one message, write its own logs. `s3:GetObject`
-on `/*` without `s3:ListBucket` means the function can read the object the event
-names and cannot go looking for others. The log statements are on this function's
-own group, not on `*`: the broad version is what
-`AWSLambdaBasicExecutionRole` grants, and it is unnecessary once Terraform owns
-the group.
+Three statements and no wildcards, because the handler makes exactly three kinds of call: read one object, send one message, write its own logs. `s3:GetObject` on `/*` without `s3:ListBucket` means the function can read the object the event names and cannot go looking for others. The log statements are on this function's own group, not on `*`: the broad version is what `AWSLambdaBasicExecutionRole` grants, and it is unnecessary once Terraform owns the group.
 
 #### 10. The inline policy
 
@@ -305,8 +267,7 @@ the group.
 
 **Docs:** [aws_iam_role_policy](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/iam_role_policy)
 
-Inline, not attached: this policy exists for one role and has no life of its own,
-and inline policies die with the role instead of lingering as orphans.
+Inline, not attached: this policy exists for one role and has no life of its own, and inline policies die with the role instead of lingering as orphans.
 
 #### 11. The zip
 
@@ -324,9 +285,7 @@ and inline policies die with the role instead of lingering as orphans.
 
 **Docs:** [archive_file](https://registry.terraform.io/providers/hashicorp/archive/2.8.1/docs/data-sources/file) · [path.module](https://developer.hashicorp.com/terraform/language/expressions/references)
 
-The archive provider zips the folder at plan time, so the folder has to exist
-before the plan. That is why the build comes before `plan` in this milestone and
-in CI. `dist/` and `build/` are ignored by git in this milestone.
+The archive provider zips the folder at plan time, so the folder has to exist before the plan. That is why the build comes before `plan` in this milestone and in CI. `dist/`, `build/` and `node_modules/` are already ignored by the `.gitignore` from SP0, so the zip and the dependency folder stay out of the diff.
 
 #### 12. The function
 
@@ -353,41 +312,33 @@ in CI. `dist/` and `build/` are ignored by git in this milestone.
 
 **Docs:** [aws_lambda_function](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/lambda_function) · [Node.js runtime](https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html) · [JSON log format](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs-logformat.html)
 
-Why `nodejs24.x` and never `nodejs20.x`: Lambda deprecated Node 20 on
-2026-04-30, and every older example still says `nodejs20.x`. A function on a
-deprecated runtime keeps working until the day it does not.
+Why `nodejs24.x` and never `nodejs20.x`: Lambda deprecated Node 20 on 2026-04-30, and every older example still says `nodejs20.x`. A function on a deprecated runtime keeps working until the day it does not.
 
-Why `logging_config` names the log group instead of using `depends_on`: that
-attribute is what orders the function after the group, so the function cannot
-make a group of the same name first and then fail because it already exists. It
-also gives every record as JSON, so a field passed to the logger arrives as a key
-instead of a substring.
+Why `logging_config` names the log group instead of using `depends_on`: that attribute is what orders the function after the group, so the function cannot make a group of the same name first and then fail because it already exists. It also gives every record as JSON, so a field passed to the logger arrives as a key instead of a substring.
 
-Why `source_code_hash`: without it, a rebuilt zip keeps the same key in S3 and
-the function never updates. The hash changes when the code changes.
+Why `source_code_hash`: without it, a rebuilt zip keeps the same key in S3 and the function never updates. The hash changes when the code changes.
 
-> **✅ Checkpoint: step 2 (ingest function)**
-> Save `ingest.tf`, the `archive` entry in `backend.tf`, the updated
-> `.terraform.lock.hcl`, and the built `src/ingest/`, then run the check in your terminal before you commit:
-> ```bash
-> bash .github/scripts/check-local.sh
-> ```
-> Expected: `SP6 step 2 (ingest)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line under the summary names the brief section to re-read and what the check looked for: fix the file and run the same command again, with no commit and no push.
-> Then format, commit, and push:
-> ```bash
-> tofu fmt -recursive
-> git add -A && git commit -m "feat(sp6): add the ingest function, its role, and its log group" && git push
-> ```
-> The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers.
-> Steps 2 and 3 turn ✅: the function's shape, and the three references the mock
-> provider cannot evaluate. Steps 4 to 8 stay ❌.
+**✅ Checkpoint: step 2 (ingest function)**
+Save `ingest.tf`, the `archive` entry in `backend.tf`, the updated `.terraform.lock.hcl`, and the built `src/ingest/`, then run the check in your terminal before you commit:
+
+```bash
+bash .github/scripts/check-local.sh
+```
+
+Expected: `SP6 step 2 (ingest)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line names the section to re-read: fix it and run the same command again before committing. Then format, commit, and push:
+
+```bash
+tofu fmt -recursive
+git add -A && git commit -m "feat(sp6): add the ingest function, its role, and its log group" && git push
+```
+
+The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers. Steps 2 and 3 turn ✅: the function's shape, and the three references the mock provider cannot evaluate. Steps 4 to 8 stay ❌.
 
 ## Part 3: The trigger
 
 ### trigger.tf
 
-Two blocks, in this order: the permission, then the notification that depends on
-it.
+Two blocks, in this order: the permission, then the notification that depends on it.
 
 #### 13. The permission
 
@@ -402,13 +353,15 @@ it.
 | `function_name` | the `function_name` of `aws_lambda_function.ingest` |
 | `principal` | `"s3.amazonaws.com"` |
 | `source_arn` | the `arn` of `aws_s3_bucket.landing` |
+| `source_account` | the `account_id` of `data.aws_caller_identity.current` |
 
 **Tags:** not supported by this resource type.
 
 **Docs:** [aws_lambda_permission](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/lambda_permission) · [Granting S3 permission to invoke a function](https://docs.aws.amazon.com/lambda/latest/dg/with-s3-tutorial.html)
 
-`source_arn` is the part that matters. Without it, any bucket in any account can
-invoke this function. With it, only this bucket can.
+`source_arn` is the part that matters. Without it, any bucket in any account can invoke this function. With it, only this bucket can.
+
+`source_account` is the other half, and it is one line: `source_account = data.aws_caller_identity.current.account_id`, added to the same permission. `source_arn` names a bucket, and a bucket name lives in a global namespace where a released name can be claimed by another account, so the ARN alone cannot tell this account's bucket from a same-named one elsewhere — the bucket's own name carries the account number, and this repository is public. The data source is the one `terraform/s3.tf` already declares in Part 1, item 1, so this is one more argument to the permission rather than a second block.
 
 #### 14. The notification
 
@@ -426,39 +379,29 @@ invoke this function. With it, only this bucket can.
 
 **Docs:** [aws_s3_bucket_notification](https://registry.terraform.io/providers/hashicorp/aws/6.69.1/docs/resources/s3_bucket_notification) · [S3 event notifications](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html)
 
-`depends_on` is not decoration. S3 validates the destination when the
-notification is written, and the destination is only valid once the permission
-exists. **Unverified here:** this ordering failure is what the old guide recorded,
-and no run in this workspace could reproduce it without an account. If your first
-apply succeeds without the ordering, the line costs nothing; if it fails, the
-error *"Unable to validate the following destination configurations"* is the
-evidence, and the fix is this line rather than a second apply. Without the ordering, the apply fails with *"Unable to validate the
-following destination configurations"*, and the second apply usually succeeds,
-which is how people learn to re-run applies instead of fixing the order.
+`depends_on` is not decoration. S3 validates the destination when the notification is written, and the destination is only valid once the permission exists. Without the ordering, the first apply can fail with *"Unable to validate the following destination configurations"*, and a second apply usually succeeds, which is how people learn to re-run applies instead of fixing the order. The line is the fix, and it is one line so the text check can read it.
 
-`ObjectCreated:*` covers both a new object and a new version of an existing key,
-which is what the duplicate test needs.
+`ObjectCreated:*` covers both a new object and a new version of an existing key, which is what the duplicate test needs.
 
-> **✅ Checkpoint: step 4 (trigger)**
-> Save `trigger.tf`, then run the check in your terminal before you commit:
-> ```bash
-> bash .github/scripts/check-local.sh
-> ```
-> Expected: `SP6 step 4 (trigger)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line under the summary names the brief section to re-read and what the check looked for: fix the file and run the same command again, with no commit and no push.
-> Then format, commit, and push:
-> ```bash
-> tofu fmt -recursive
-> git add -A && git commit -m "feat(sp6): add the S3 permission and notification" && git push
-> ```
-> The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers.
-> Steps 4 and 5 turn ✅: the permission and the notification, and the ordering
-> line the mock cannot see. Steps 6 to 8 stay ❌.
+**✅ Checkpoint: step 4 (trigger)**
+Save `trigger.tf`, then run the check in your terminal before you commit:
+
+```bash
+bash .github/scripts/check-local.sh
+```
+
+Expected: `SP6 step 4 (trigger)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line names the section to re-read: fix it and run the same command again before committing. Then format, commit, and push:
+
+```bash
+tofu fmt -recursive
+git add -A && git commit -m "feat(sp6): add the S3 permission and notification" && git push
+```
+
+The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers. Steps 4 and 5 turn ✅: the permission and the notification, and the ordering line the mock cannot see. Steps 6 to 8 stay ❌.
 
 ## Part 4: The function's source
 
-Four files under `src/ingest/`. The handler logic and its entry point are
-separate on purpose: the logic never imports an SDK, so a test can run it with
-stub clients and no AWS account.
+Four files under `src/ingest/`. The handler logic and its entry point are separate on purpose: the logic never imports an SDK, so a test can run it with stub clients and no AWS account.
 
 #### 15. `src/ingest/package.json`
 
@@ -469,8 +412,7 @@ stub clients and no AWS account.
 | `scripts.build` | `"tsc"` |
 | `devDependencies` | `@aws-sdk/client-s3` `^3.0.0`, `@aws-sdk/client-sqs` `^3.0.0`, `@types/node` `^24.0.0`, `typescript` `^5.0.0` |
 
-The SDK is a dev dependency because the `nodejs24.x` runtime already ships
-SDK v3. It has to be there to compile, and it must not be in the zip.
+The SDK is a dev dependency because the `nodejs24.x` runtime already ships SDK v3. It has to be there to compile, and it must not be in the zip. The trade-off: you compile against whatever `^3.0.0` resolves to today, and the runtime's copy moves on AWS's schedule, so a type that compiles here can still be missing at run time. The caret range stays, because a narrower pin fails the install the day that version is withdrawn.
 
 **Docs:** [npm package.json](https://docs.npmjs.com/cli/configuring-npm/package-json)
 
@@ -505,32 +447,27 @@ The file exports one factory and two types:
 
 The handler's behavior, in order, for each record:
 
-1. Read the bucket from `record.s3.bucket.name` and the key from
-   `record.s3.object.key`.
-2. Decode the key: replace `+` with a space, then `decodeURIComponent`. S3
-   encodes both in the event, and a key with a space arrives as `+`.
+1. Read the bucket from `record.s3.bucket.name` and the key from `record.s3.object.key`.
+2. Decode the key: replace `+` with a space, then `decodeURIComponent`. S3 encodes both in the event, and a key with a space arrives as `+`.
 3. Call `deps.getObject(bucket, key)`. The result is the object's body as text.
-4. Parse it as JSON. A body that is not JSON is a failure: let the error out and
-   do not send a message for that record.
-5. Send one message with `deps.sendMessage`, as a JSON string of the parsed body
-   spread into an object, plus `landedAt` = `record.eventTime`. Do not use the
-   function's own clock.
+4. Parse it as JSON. A body that is not JSON is a failure: let the error out and do not send a message for that record. The body also has to be a JSON **object**: an array, a string, a number or `null` parses, and spreading it produces keys nobody meant, so treat those as failures the same way.
+5. Send one message with `deps.sendMessage`, as a JSON string of the parsed body spread into an object, plus `landedAt` = `record.eventTime`. Do not use the function's own clock. SQS takes 256 KiB per message and no more, so an object larger than that is read successfully and then fails at `sendMessage`: the size limit is real, and this path does not check it before it starts.
 6. Count the message and return `{ sent }` when every record is done.
 
-One message per record, in order. Do not batch, and do not catch errors: a
-throw fails the invocation, which is how the S3 retry path stays visible.
+One message per record, in order. Do not batch, and do not catch errors: a throw fails the invocation, which is how the S3 retry path stays visible.
 
-Do not add the idempotency key here. The overview's message contract lists it as
-arriving in SP9, where the consumer's conditional write decides how it is
-computed. A key guessed now would be replaced then, and the two would disagree.
+`getObject` reads the current version of the key, not the version the event names: the event carries a `versionId`, the handler does not pass it, so a re-upload between the event and the read gives the newer bytes. That is exactly the re-upload SP12's duplicate test makes, and SP9 explains why the second one writes no row.
+
+**What this path does not give you.** An S3 invocation is asynchronous: S3 retries a failed invocation a few times and then drops it, with no dead-letter queue and no redrive. The SQS path in SP5 has both, and the bound this project promises is the queue, not the bucket — so a poisoned object can fail silently after its retries. Say so in the README's blast-radius section rather than implying every failure ends up somewhere readable.
+
+Do not add the idempotency key here. The overview's message contract lists it as arriving in SP9, where the consumer's conditional write decides how it is computed. A key guessed now would be replaced then, and the two would disagree.
 
 #### 18. `src/ingest/index.ts`
 
 **File Type:** `typescript`
 **File Name:** `src/ingest/index.ts`
 
-It builds the two clients, wires them into the factory, and exports the result.
-The SDK calls, with their arguments:
+It builds the two clients, wires them into the factory, and exports the result. The SDK calls, with their arguments:
 
 | Call | Arguments |
 |---|---|
@@ -542,8 +479,7 @@ The SDK calls, with their arguments:
 | `sqs.send` | the command |
 | the queue URL | `process.env.QUEUE_URL`, read once at module load |
 
-The file exports `handler` = `createHandler({ getObject, sendMessage })`. The two
-methods use the clients above; nothing else belongs in this file.
+The file exports `handler` = `createHandler({ getObject, sendMessage })`. The two methods use the clients above; nothing else belongs in this file.
 
 **Docs:** [S3 GetObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html) · [SQS SendMessage](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessage.html) · [SDK v3 GetObjectCommand](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3/command/GetObjectCommand/)
 
@@ -554,23 +490,23 @@ cd src/ingest && npm install && npm run build && cd ../..
 ls src/ingest/dist
 ```
 
-Expected: `handler.js` and `index.js`. `npm install` writes a
-`package-lock.json`; commit it, because CI runs `npm ci`, which needs one.
+Expected: `handler.js` and `index.js`. `npm install` writes a `package-lock.json`; commit it, because CI runs `npm ci`, which needs one.
 
-> **✅ Checkpoint: steps 6 and 7 (handler and wiring)**
-> Save the four files, then run the check in your terminal before you commit:
-> ```bash
-> bash .github/scripts/check-local.sh
-> ```
-> Expected: `SP6 step 6 (handler)` and `SP6 step 7 (wiring)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line under the summary names the brief section to re-read and what the check looked for: fix the file and run the same command again, with no commit and no push.
-> Then format, commit, and push:
-> ```bash
-> tofu fmt -recursive
-> git add -A && git commit -m "feat(sp6): add the ingest handler and its entry point" && git push
-> ```
-> The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers.
-> Step 6 turns ✅ (the handler's behavior, run with stub clients) and step 7
-> turns ✅ (the SDK calls, checked as text). Step 8 stays ❌.
+**✅ Checkpoint: steps 6 and 7 (handler and wiring)**
+Save the four files, then run the check in your terminal before you commit:
+
+```bash
+bash .github/scripts/check-local.sh
+```
+
+Expected: `SP6 step 6 (handler)` and `SP6 step 7 (wiring)` ✅, with the steps you have not built yet still ❌. If a step is ❌, the `Next:` line names the section to re-read: fix it and run the same command again before committing. Then format, commit, and push:
+
+```bash
+tofu fmt -recursive
+git add -A && git commit -m "feat(sp6): add the ingest handler and its entry point" && git push
+```
+
+The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers. Step 6 turns ✅ (the handler's behavior, run with stub clients) and step 7 turns ✅ (the SDK calls, checked as text). Step 8 stays ❌.
 
 ## Part 5: Two more outputs
 
@@ -581,22 +517,23 @@ Expected: `handler.js` and `index.js`. `npm install` writes a
 | `output` | `landing_bucket` | the `id` of `aws_s3_bucket.landing` |
 | `output` | `ingest_function_name` | the `function_name` of `aws_lambda_function.ingest` |
 
-Give each one a `description` of one sentence. Leave the five outputs from SP5
-alone.
+Give each one a `description` of one sentence. Leave the five outputs from SP5 alone.
 
-> **✅ Checkpoint: step 8 (outputs)**
-> Save `outputs.tf`, then run the check in your terminal before you commit:
-> ```bash
-> bash .github/scripts/check-local.sh
-> ```
-> Expected: `SP6 step 8 (outputs)` ✅, and the summary says `👍 SP6 passed.` If a step is ❌, the `Next:` line under the summary names the brief section to re-read and what the check looked for: fix the file and run the same command again, with no commit and no push.
-> Then format, commit, and push:
-> ```bash
-> tofu fmt -recursive
-> git add -A && git commit -m "feat(sp6): expose the bucket and the function name" && git push
-> ```
-> The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers.
-> Step 8 turns ✅, and every row is ✅.
+**✅ Checkpoint: step 8 (outputs)**
+Save `outputs.tf`, then run the check in your terminal before you commit:
+
+```bash
+bash .github/scripts/check-local.sh
+```
+
+Expected: `SP6 step 8 (outputs)` ✅, and the summary says `👍 SP6 passed.` If a step is ❌, the `Next:` line names the section to re-read: fix it and run the same command again before committing. Then format, commit, and push:
+
+```bash
+tofu fmt -recursive
+git add -A && git commit -m "feat(sp6): expose the bucket and the function name" && git push
+```
+
+The push runs the same check on GitHub, which is the authority and is consulted once per milestone, before `gh pr ready`: [SP1](SP1.md#how-to-see-your-results) explains both tiers. Step 8 turns ✅, and every row is ✅.
 
 ## Check it
 
@@ -605,23 +542,17 @@ Run `bash .github/scripts/check-local.sh` at every checkpoint. What its output m
 ### How to see your results
 
 
-The check prints one row per step, in the order the parts appear, and a step is
-green only when its file is in place and every assertion in it passes. A red row
-prints the reason underneath it, naming the file, the value, or the attribute
-that is wrong. CI prints the same rows in the job summary, so the local run and
-the remote run read identically.
+The check prints one row per step, in the order the parts appear, and a step is green only when its file is in place and every assertion in it passes. A red row prints the reason underneath it, naming the file, the value, or the attribute that is wrong. CI prints the same rows in the job summary, so the local run and the remote run read identically.
 
 
-**Locally:** `.github/scripts/check.sh SP6`, which prints one row per step and
-`👍 SP6 passed.` at the end. **On the pull request:** **Actions**, newest run,
-**Summary**.
+**Locally:** `bash .github/scripts/check-local.sh`, which prints one row per step and `👍 SP6 passed.` at the end. **On the pull request:** **Actions**, newest run, **Summary**.
 
 | Step | Checks |
 |---|---|
 | 1 (s3) | the bucket's name, `force_destroy`, versioning, SSE-S3, all four public-access settings, the tags, and that the name follows the prefix |
 | 2 (ingest) | the log group and its retention, the trust policy, the role, the three permission statements with their exact actions and resources, the inline policy, the zip's paths, and every function setting including `nodejs24.x` |
 | 3 (references) | the three references the mock cannot evaluate: `assume_role_policy`, `policy`, and `source_code_hash` |
-| 4 (trigger) | the permission's principal, action, and `source_arn`, and the notification's target and event list |
+| 4 (trigger) | the permission's principal, action, `source_arn` and `source_account`, and the notification's target and event list |
 | 5 (order) | `depends_on = [aws_lambda_permission.s3_invoke]` on one line, and the notification using the function's `arn` attribute |
 | 6 (handler) | the handler's behavior, run with stub clients: the landing time from the event, the key decoded, one message per record |
 | 7 (wiring) | the SDK calls in `index.ts`: `GetObjectCommand` with bucket and key, `QueueUrl`, `MessageBody` |
@@ -629,18 +560,13 @@ the remote run read identically.
 
 Reading a failure:
 
-- **"The runtime must be nodejs24.x"**: an older example's `nodejs20.x` is still
-  in the file. Node 20 is deprecated.
-- **"must deploy the archive's output_path"**: `filename` and
-  `source_code_hash` have to point at the archive data source, not at a typed-in
-  path.
-- **Step 5 ❌ on `depends_on`**: write it on one line, exactly as the table says.
-  A multi-line list is correct Terraform and fails a text check, which is the one
-  place this project prefers the one-line form.
+- **"The runtime must be nodejs24.x"**: an older example's `nodejs20.x` is still in the file. Node 20 is deprecated.
+- **"must deploy the archive's output_path"**: `filename` and `source_code_hash` have to point at the archive data source, not at a typed-in path.
+- **Step 5 ❌ on `depends_on`**: write it on one line, exactly as the table says. A multi-line list is correct Terraform and fails a text check, which is the one place this project prefers the one-line form.
 
 ## Done when (plan only, no apply)
 
-Three things to prove, and none of them costs anything.
+Three things to prove, and none of them costs anything. The plan is not offline: it reads the state bucket and calls AWS to resolve `aws_caller_identity`, so the credentials from SP1 have to be in your environment, exactly as they were for SP5. It creates nothing.
 
 The build first, because the archive provider needs the folder:
 
@@ -651,10 +577,7 @@ tofu -chdir=terraform init
 tofu -chdir=terraform plan
 ```
 
-Expected, at the end: `Plan: 13 to add, 0 to change, 0 to destroy.` Those are
-SP5's three resources plus ten here: the bucket and its three settings, the log
-group, the role, the inline policy, the function, the permission, and the
-notification.
+Expected, at the end: `Plan: 13 to add, 0 to change, 0 to destroy.` Those are SP5's three resources plus ten here: the bucket and its three settings, the log group, the role, the inline policy, the function, the permission, and the notification.
 
 Then confirm the zip holds the compiled files:
 
@@ -664,16 +587,12 @@ unzip -l terraform/build/ingest.zip
 
 Expected: `index.js` and `handler.js`, and no `node_modules` folder.
 
-Read the plan's function section before you move on: `runtime` is `nodejs24.x`,
-`architectures` is `arm64`, `QUEUE_URL` names the main queue, and the log group
-is named. If `filename` shows a `.zip` under `src/ingest` rather than
-`terraform/build`, the archive paths are wrong.
+Read the plan's function section before you move on: `runtime` is `nodejs24.x`, `architectures` is `arm64`, `QUEUE_URL` names the main queue, and the log group is named. If `filename` shows a `.zip` under `src/ingest` rather than `terraform/build`, the archive paths are wrong.
 
-Do not apply. SP12 is the first apply, and the caps land in SP8 first. If you
-applied by mistake, `tofu -chdir=terraform destroy` removes everything and the
-bucket is empty anyway.
+Do not apply. SP12 is the first apply, and the caps land in SP8 first. If you applied by mistake, `tofu -chdir=terraform destroy` removes everything and the bucket is empty anyway.
 
 ## Mark the pull request ready
+
 ```bash
 printf '%s\n' SP6 >> milestones.txt
 git add milestones.txt && git commit -m "chore(sp6): add SP6 to milestones.txt" && git push
@@ -694,5 +613,16 @@ gh pr edit --title "feat(sp6): add the landing bucket, the ingest function, and 
 gh pr ready
 ```
 
-Paste the plan's last line into the pull request body. A reviewer reads the diff
-against this brief, then merges.
+Paste the plan's last line into the pull request body. A reviewer reads the diff against this brief, then merges.
+
+## After the merge
+
+Merge the pull request on GitHub, then clean up the branch:
+
+```bash
+git switch main && git pull
+git branch -d sp6-ingest
+git fetch --prune
+```
+
+`git branch -d` refuses after a squash merge, because the branch's commits are not in `main`; `git branch -D sp6-ingest` is the same delete. The remote branch is already gone: `delete_branch_on_merge` removes it when the pull request merges.

@@ -48,6 +48,30 @@ close_block() { # uses the loop's own variables: brief, start, seen_*, lead
   fi
 }
 
+# Two shapes exist in the briefs: the blockquoted one this script was written
+# for, where every line of a block starts with "> ", and the plain one, where
+# the checkpoint is bold text and the commands sit in an ordinary fence. The
+# plain shape is the one the guides use now, because a quoted block copies its
+# "> " markers into the terminal, where a leading ">" is a redirect. Reading
+# both here, once, keeps every rule below unchanged: a plain block is presented
+# to this script as a quoted block.
+__src="${dir:-docs/milestones}"
+[ -d "$__src" ] || __src="docs/milestones"
+__tmp="$(mktemp -d)"
+trap 'rm -rf "$__tmp"' EXIT
+mkdir -p "$__tmp/docs/milestones"
+for __f in "$__src"/*.md; do
+  [ -f "$__f" ] || continue
+  awk '
+    /^## / { plain = 0 }
+    /^\*\*.*heckpoint:/ { plain = 1; print "> " $0; next }
+    plain == 1 && /^#/ { plain = 0; print; next }
+    plain == 1 { print "> " $0; next }
+    { print }
+  ' "$__f" > "$__tmp/docs/milestones/$(basename "$__f")"
+done
+cd "$__tmp"
+
 for brief in docs/milestones/*.md; do
   [ -f "$brief" ] || continue
   briefs=$((briefs + 1))
