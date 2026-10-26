@@ -13,3 +13,4 @@ terraform/bootstrap/oidc.tf | repo:\$\{var.github_owner\}@\$\{var.github_owner_i
 terraform/bootstrap/oidc.tf | repo:\$\{var.github_owner\}@\$\{var.github_owner_id\}/\$\{var.github_repo\}@\$\{var.github_repo_id\}:ref:refs/heads/main | the main-branch subject, with both numeric IDs
 terraform/bootstrap/variables.tf | ^variable "github_owner_id" \{ | the owner ID is an input
 terraform/bootstrap/variables.tf | ^variable "github_repo_id" \{ | and the repository's
+terraform/bootstrap/variables.tf | ^  description += "GitHub user or organization that owns the repository"$ | every variable carries a description, not just a type

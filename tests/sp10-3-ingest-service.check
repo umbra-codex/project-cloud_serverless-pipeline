@@ -5,7 +5,8 @@ compose/ingest/index.ts | req\.method !== "POST" | must accept POST only and ans
 compose/ingest/index.ts | res\.writeHead\(405\) | must answer 405 to a method it does not serve
 compose/ingest/index.ts | xAdd\("events", "\*" | must add one entry to the events stream per request
 compose/ingest/index.ts | landedAt: new Date\(\)\.toISOString\(\) | must stamp landedAt, the same clock start the AWS ingest function records
-compose/ingest/index.ts | idempotencyKey: String\(body\.idempotencyKey\) | must carry the request's idempotency key into the stream entry
+compose/ingest/index.ts | idempotencyKey: body\.idempotencyKey | must carry the request's idempotency key into the stream entry unchanged
+compose/ingest/index.ts | res\.writeHead\(400\) | must answer 400 to a body that is not JSON or carries no string idempotencyKey
 compose/ingest/index.ts | res\.writeHead\(202\) | must answer 202, not 200: the message is queued, not processed
 compose/ingest/package.json | "redis": "\^5\.0\.0" | the ingest service must use redis 5, the major the reference build runs
 compose/ingest/Dockerfile | ^RUN npm install$ | the build must install dependencies without a lock, because these folders commit none

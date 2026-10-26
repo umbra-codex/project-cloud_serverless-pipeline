@@ -14,3 +14,4 @@ terraform/bootstrap/storage.tf | ^  block_public_policy     += true$ | all four
 terraform/bootstrap/storage.tf | ^  ignore_public_acls      += true$ | all four
 terraform/bootstrap/storage.tf | ^  restrict_public_buckets += true$ | all four
 terraform/bootstrap/variables.tf | ^variable "state_bucket" \{ | the bucket name is an input
+terraform/bootstrap/variables.tf | ^  description += "Name of the bucket that holds every stack's state"$ | every variable carries a description, and this one says what the bucket is for

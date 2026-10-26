@@ -6,7 +6,7 @@ DynamoDB. The same design then runs as a Compose stack under Podman on this
 machine (the Kamrui H1), with Redis Streams, a worker, and Postgres. The AWS half
 is evidence that gets captured and destroyed. The Compose half stays live.
 
-The AWS account is a free-plan account, and it closes on 2026-11-05. Everything
+The AWS account is a free-plan account whose plan ends on 2026-11-05. Everything
 that bills there has to be built, measured, captured, and destroyed before that
 date. After it, only the Compose half runs, on this machine, and the AWS half is
 a record rather than something a reader can apply.
@@ -28,11 +28,11 @@ batch, and a table whose key makes a duplicate write a no-op.
 | `ReportBatchItemFailures` on the event source mapping | One bad message must not send nine good ones back to the queue | Reliability: "isolate failures", "design for at-least-once" | Backed |
 | A conditional write on `idempotency_key` | SQS delivers at least once, so the consumer will see the same message twice; a condition makes the second write a no-op | Reliability: "make operations idempotent" | Backed |
 | A role per function, with named statements | Each function gets exactly the calls its code makes, so a compromised handler cannot read the other's data | Security: "least privilege" | Backed |
-| Bucket public access blocked, SSE-S3, TLS for access | The bucket is an input, never a website; encryption at rest is free here | Security: "encrypt data at rest and in transit" | Backed |
+| Bucket public access blocked, SSE-S3 encryption | The bucket is an input, never a website; encryption at rest is free here | Security: "encrypt data at rest" | Backed |
 | Log groups made by Terraform, 14-day retention | A log group Terraform owns dies with the stack, and 14 days is long enough to debug a burst that lasts an hour | Operational excellence: "instrument for observability", Cost optimization: "manage demand and supply" | Backed for ownership, challenged on 14 days: a long-lived stack would keep 90 |
-| An alert-only budget at 1 USD, credits excluded | The whole point is a spend ceiling that fires on a credit-funded account | Cost optimization: "manage cost with budgets and alerts" | Backed |
+| An alert-only budget at 1 USD, credits excluded | An alert, not a limit: it reports spend with up to a day's delay, so the only same-day bounds are the mapping cap and the destroy in SP14 | Cost optimization: "manage cost with budgets and alerts" | Backed |
 | `maximum_concurrency` on the mapping | Throttling at the queue is the cap that keeps a burst from consuming the account's whole concurrency | Reliability: "use back pressure", Performance efficiency: "use concurrency controls" | Backed |
-| Reserved concurrency as a variable that defaults to off | The account Lambda limit is 10, and AWS requires 100 unreserved units before any reservation, so an apply with a positive value fails | Reliability: "throttle to protect" | Challenged, and left as a **Decision for Umbra**: raise the quota to 1000 and set a positive value, or keep the mapping cap and the budget as the bounds and record the amendment. SP8 states both routes |
+| Reserved concurrency as a variable that defaults to off | The account Lambda limit is 10, and AWS requires 100 unreserved units before any reservation, so an apply with a positive value fails | Reliability: "throttle to protect" | Challenged, and left as a **decision for you**: raise the quota to 1000 and set a positive value, or keep the mapping cap and the budget as the bounds and record the amendment. SP8 states both routes |
 | One standard queue, not FIFO | Order is not part of the contract; the key makes a duplicate harmless, which is the property FIFO would otherwise buy | Reliability: "design for at-least-once" | Challenged: FIFO would remove the duplicate-delivery exercise this project exists to demonstrate |
 | Node 24 TypeScript on `arm64` | One toolchain builds both functions, and `arm64` is cheaper per GB-second | Performance efficiency: "use the right resources" | Backed |
 | OpenTofu with S3 native locking | State is remote, locked, and versioned, so two runs cannot corrupt it | Operational excellence: "manage infrastructure as code" | Backed |
@@ -54,9 +54,11 @@ flowchart LR
   CON -->|conditional PutItem| DDB[(DynamoDB events)]
   Q -.->|5 failed receives| DLQ[SQS dead-letter queue]
   DLQ -.->|redrive after a fix| Q
-  BUD[Budget alert, credits excluded] -.->|watches| S3
+  BUD[Budget alert, credits excluded] -.->|alerts on account spend| ACCT[(Account spend)]
   CAP[Concurrency caps] -.->|reserved concurrency and maximum concurrency| CON
 ```
+
+The budget watches the account's spend, not one resource: it knows nothing about the bucket, and a credit that hides a charge hides it from the budget too. That is why the same-day bounds are the mapping cap and the destroy rather than the alarm.
 
 The Compose runtime:
 
@@ -160,7 +162,7 @@ One sitting each. The order is the order to build them.
 | SP5 | Queue, dead-letter queue, and table | `sp5-queues` | SP4 | no |
 | SP6 | Landing bucket, S3 trigger, ingest function | `sp6-ingest` | SP5 | no |
 | SP7 | Consumer function and event source mapping | `sp7-consumer` | SP6 | no |
-| SP8 | Blast-radius caps: budget, mapping cap, and the per-function setting (off by default, Decision for Umbra) | `sp8-caps` | SP7 | no |
+| SP8 | Blast-radius caps: budget, mapping cap, and the per-function setting (off by default, your decision) | `sp8-caps` | SP7 | no |
 | SP9 | Idempotent writes and partial batch failures | `sp9-idempotency` | SP8 | no |
 | SP10 | The Compose runtime: worker, stream, store | `sp10-compose` | SP9 | no |
 | SP11 | The public read-only status view | `sp11-status` | SP10 | no |
@@ -173,7 +175,7 @@ One sitting each. The order is the order to build them.
 SP10 sits before SP12 on purpose. The benchmark has to run while the AWS stack is
 still applied, and the Compose half has to exist before that, so the Compose
 runtime is built first and the money starts afterwards. SP10 and SP11 run on this
-machine and cost nothing; SP12 to SP14 run in the account that closes on
+machine and cost nothing; SP12 to SP14 run in the account whose plan ends on
 2026-11-05.
 
 SHIP is last and has no number, because it is always last and how many milestones
@@ -183,11 +185,13 @@ to do.
 
 ## The 2026-11-05 deadline
 
-The free-plan account that holds the AWS half closes on 2026-11-05. That date
-splits the project by lifetime, not by machine:
+The free-plan account that holds the AWS half ends its plan on 2026-11-05. AWS
+suspends the account and keeps its data for 90 days, and upgrading to a paid plan
+inside that window reopens it; this project destroys and captures instead of
+paying, so the date splits the project by lifetime, not by machine:
 
 - The setup milestones, SP1 to SP3 (the AWS session, the state bucket, and the OIDC role), have to
-  be built while the account exists. They cannot be rebuilt after it closes.
+  be built while the plan runs. Rebuilding them after it ends means paying for the upgrade.
 
 - The burst milestones, SP12 to SP14 (the first apply, the drill, the benchmark,
   the destroy, and the evidence), have to be finished and captured before the
@@ -201,7 +205,7 @@ splits the project by lifetime, not by machine:
 SP4 to SP9 spend nothing, so the date does not threaten them. They only have to
 land before the burst can start.
 
-**What stops working when the account closes.**
+**What stops working when the plan ends.**
 
 - The CI `plan` job. It exchanges `id-token` for a session with the role SP3
   created, and that role and its provider live in the account, so the job fails
@@ -230,7 +234,7 @@ land before the burst can start.
 **What the README claims instead.** "What you can verify yourself" keeps the
 clickable checks: the badge, the URL of the last green run, the `static` job, the
 trust policy, and the live status page. The AWS paragraphs say the stack was
-applied, measured, captured, and destroyed before the account closes. They do not
+applied, measured, captured, and destroyed before the plan ends. They do not
 invite a reader to run `tofu apply` against state that no longer exists, and they
 do not describe the
 `plan` job as currently green.
@@ -239,16 +243,28 @@ do not describe the
 
 | Milestone | Why the date matters |
 |---|---|
-| SP2, SP3 | The bucket and the role cannot be created after the account closes, and SP4's plan job needs the role |
+| SP2, SP3 | The bucket and the role cannot be created after the plan ends, and SP4's plan job needs the role |
 | SP12 | The first apply has to happen before the date; a drill run afterwards has no account to drill in |
 | SP13 | The AWS column is measurable only while the stack is applied and the account is open |
 | SP14 | The destroy and its confirmation are the last actions the account allows |
 | SP15 | The README's claims change with the date, so it is written after the destroy and says so |
 
+## If you start after 2026-11-05
+
+The guide is written to be built before that date, and a reader who finds it later cannot follow it exactly. Nothing technical stops them. This is the path:
+
+- **SP0 to SP9 work unchanged.** They need no AWS spend, and SP4 to SP9 are plan-only, so a paid account on the smallest possible footprint runs them for cents. The sign-in steps in SP1 are the same.
+- **SP12 to SP14 become optional.** The first apply, the drill, the destroy, and the AWS evidence column need a live account. Without one, skip those three milestones and their checks, and say in the README that the AWS half was not run.
+- **SP10, SP11, and SP13's Compose column work as written.** They run on the machine, cost nothing, and produce the numbers the README's Compose column needs.
+- **SP15 and SHIP keep their shape.** The README states the Compose half as the live demo and the AWS half as a design that was not deployed. The ship check still passes: it reads files, not accounts.
+- **One time budget to plan with.** SP2, SP3, SP5, SP6, and SP7 take an evening each; SP12 needs about 15 minutes of enforced waiting plus the drill; SP13 needs the next day for Cost Explorer's figures. Ten days is comfortable, two is not.
+
+If the plan has already ended, AWS suspends the account and keeps the data for 90 days, and upgrading to a paid plan inside that window reopens it: that is the route back for a reader who wants the AWS half as well. This project does not take it, and the evidence is the record instead.
+
 ## Definition of done, mapped
 
-Each line of the spec's `## Definition of done`, and the milestone that closes
-it. Nothing is left without an owner.
+Each line of this project's definition of done, and the milestone that closes it.
+Nothing is left without an owner.
 
 | Definition-of-done line | Closed by |
 |---|---|

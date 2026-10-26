@@ -55,7 +55,7 @@ mock_provider "aws" {
 
 mock_provider "archive" {}
 
-# SP6 step 6: the two values the SP12 commands read with tofu output.
+# SP6 step 8: the two values the SP12 commands read with tofu output.
 # Brief: docs/milestones/SP6.md
 
 variables {

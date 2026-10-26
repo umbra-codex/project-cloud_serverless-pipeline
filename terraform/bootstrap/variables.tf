@@ -10,7 +10,7 @@ variable "state_bucket" {
 }
 
 variable "github_owner" {
-  description = "GitHub user that owns the repository"
+  description = "GitHub user or organization that owns the repository"
   type        = string
   default     = "umbra-codex"
 }

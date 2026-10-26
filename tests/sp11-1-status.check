@@ -5,7 +5,7 @@ compose/status/index.ts | res\.writeHead\(405\) | must answer 405 to a method it
 compose/status/index.ts | SELECT count\(\*\)::int AS n FROM events | must report how many events were processed
 compose/status/index.ts | xLen\("events-dead"\) | must report the dead-letter depth
 compose/status/index.ts | content-type": *"application/json | must answer JSON
-compose/status/index.ts | processed: rows\[0\]\.n, deadLetterDepth: dead | must answer the two numbers the README promises
+compose/status/index.ts | processed: [A-Za-z_$][A-Za-z0-9_$]*(\[0\])?\.n, deadLetterDepth: [A-Za-z_$][A-Za-z0-9_$]* | must answer the two numbers the README promises
 compose/status/package.json | "redis": "\^5\.0\.0" | the status service must use redis 5, the major the reference build runs
 compose/status/Dockerfile | ^RUN npm install$ | the build must install dependencies without a lock, because these folders commit none
 compose/status/Dockerfile | !^RUN npm ci$ | npm ci needs a lock file, and this folder has none

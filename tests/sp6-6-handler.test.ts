@@ -1,4 +1,4 @@
-// SP6 step 5: the ingest handler, run with stub AWS clients. No account, no
+// SP6 step 6: the ingest handler, run with stub AWS clients. No account, no
 // network. Brief: docs/milestones/SP6.md
 import { expect, test } from "bun:test";
 
@@ -64,4 +64,17 @@ test("sends one message per record and reports how many", async () => {
   expect(sent).toHaveLength(2);
   expect(result).toEqual({ sent: 2 });
   expect(JSON.parse(sent[1]!).landedAt).toBe("2026-10-01T12:00:01.000Z");
+});
+
+test("rejects a body that is not a JSON object", async () => {
+  const { handler, sent } = build({
+    "list.json": "[1,2]",
+    "text.json": '"hello"',
+    "null.json": "null",
+  });
+
+  await expect(handler(s3Event("list.json"))).rejects.toThrow();
+  await expect(handler(s3Event("text.json"))).rejects.toThrow();
+  await expect(handler(s3Event("null.json"))).rejects.toThrow();
+  expect(sent).toHaveLength(0);
 });

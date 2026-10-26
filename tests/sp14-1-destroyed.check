@@ -4,5 +4,8 @@ scripts/check-destroyed.sh | lambda list-functions | must ask for the functions 
 scripts/check-destroyed.sh | sqs list-queues --queue-name-prefix | must ask for the queues that are left
 scripts/check-destroyed.sh | dynamodb list-tables | must ask for the tables that are left
 scripts/check-destroyed.sh | s3api list-buckets | must ask for the buckets that are left
+scripts/check-destroyed.sh | sts get-caller-identity | must prove the session and the region before it asks anything else
+scripts/check-destroyed.sh | ^REGION= | must pin the region rather than take whatever the profile defaults to
+scripts/check-destroyed.sh | ^if ! [A-Za-z_][A-Za-z0-9_]*=\$\(aws | must capture the answer before testing it, so a failed call cannot print a green line
 scripts/check-destroyed.sh | ^  exit 1$ | must fail when something is still there
 scripts/check-destroyed.sh | ^set -euo pipefail$ | must fail fast: set -euo pipefail

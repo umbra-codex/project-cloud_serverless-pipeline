@@ -55,7 +55,7 @@ mock_provider "aws" {
 
 mock_provider "archive" {}
 
-# SP6 step 2: terraform/trigger.tf gives S3 permission to invoke the function and
+# SP6 step 4: terraform/trigger.tf gives S3 permission to invoke the function and
 # adds the bucket notification that makes it happen.
 # Brief: docs/milestones/SP6.md
 
@@ -100,6 +100,11 @@ run "s3_can_invoke_the_function" {
   assert {
     condition     = aws_lambda_permission.s3_invoke.source_arn == "arn:aws:s3:::demo-landing-210987654321"
     error_message = "The permission's source_arn must be the landing bucket's arn, so only this bucket may invoke the function (got ${aws_lambda_permission.s3_invoke.source_arn})."
+  }
+
+  assert {
+    condition     = aws_lambda_permission.s3_invoke.source_account == "210987654321"
+    error_message = "The permission's source_account must be data.aws_caller_identity.current.account_id, so a same-named bucket in another account cannot invoke the function (got ${aws_lambda_permission.s3_invoke.source_account})."
   }
 
   assert {

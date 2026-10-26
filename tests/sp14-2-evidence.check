@@ -9,4 +9,4 @@ evidence/README.md | ^\| *`bench-aws-summary.txt` | needs a row for the p50 and 
 evidence/README.md | ^\| *`bench-compose-latencies.txt` | needs a row for the Compose latency list, which SP13 writes
 evidence/README.md | ^\| *`bench-compose-summary.txt` | needs a row for the Compose p50 and p95 summary, which SP13 writes
 evidence/README.md | ^\| *`cost-explorer.txt` | needs a row for the cost numbers
-evidence/README.md | ^\| *`ci-run.txt` | needs a row for the run URL the spec asks for
+evidence/README.md | ^\| *`ci-run.txt` | needs a row for the run URL the definition of done asks for

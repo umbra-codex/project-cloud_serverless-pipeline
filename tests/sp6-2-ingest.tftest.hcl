@@ -55,7 +55,7 @@ mock_provider "aws" {
 
 mock_provider "archive" {}
 
-# SP6 step 4: terraform/ingest.tf builds the ingest function, its role, its log
+# SP6 step 2: terraform/ingest.tf builds the ingest function, its role, its log
 # group, and the zip that is deployed.
 # Brief: docs/milestones/SP6.md
 
