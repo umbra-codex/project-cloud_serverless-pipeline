@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "tfstate-774493573314-serverless"
+    bucket       = "tfstate-788516091144-serverless"
     key          = "bootstrap/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
