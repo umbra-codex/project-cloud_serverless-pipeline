@@ -10,7 +10,7 @@ variable "name_prefix" {
   default     = "serverless-pipeline"
 }
 
-variable "alert_email" {
-  description = "Address the budget alert is delivered to. No default: export TF_VAR_alert_email."
-  type        = string
-}
+# variable "alert_email" {
+#   description = "Address the budget alert is delivered to. No default: export TF_VAR_alert_email."
+#   type        = string
+# }
