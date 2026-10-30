@@ -32,3 +32,8 @@ output "ingest_function_name" {
   description = "Name of the ingest function, the function SP12 invokes to test the S3 path without a bucket upload."
   value       = aws_lambda_function.ingest.function_name
 }
+
+output "consumer_function_name" {
+  description = "Name of the consumer function, the function SP12 checks the mapping's concurrency cap against and reads the duplicate test's log from."
+  value       = aws_lambda_function.consumer.function_name
+}
