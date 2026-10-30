@@ -4,6 +4,10 @@ resource "aws_lambda_event_source_mapping" "consumer" {
   batch_size              = 10
   function_response_types = ["ReportBatchItemFailures"]
 
+  scaling_config {
+    maximum_concurrency = var.maximum_concurrency
+  }
+
   tags = {
     Name      = "${var.name_prefix}-consumer-mapping"
     Role      = "consumer-mapping"
