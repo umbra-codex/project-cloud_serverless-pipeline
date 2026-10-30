@@ -77,7 +77,7 @@ resource "aws_lambda_function" "ingest" {
   timeout                        = 30
   filename                       = data.archive_file.ingest.output_path
   source_code_hash               = data.archive_file.ingest.output_base64sha256
-  reserved_concurrent_executions = -1
+  reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
     variables = {
