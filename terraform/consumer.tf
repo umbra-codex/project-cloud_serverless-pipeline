@@ -65,7 +65,7 @@ resource "aws_lambda_function" "consumer" {
   timeout                        = 30
   filename                       = data.archive_file.consumer.output_path
   source_code_hash               = data.archive_file.consumer.output_base64sha256
-  reserved_concurrent_executions = -1
+  reserved_concurrent_executions = var.reserved_concurrency
 
 
   environment {
