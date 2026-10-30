@@ -56,15 +56,17 @@ data "archive_file" "consumer" {
 }
 
 resource "aws_lambda_function" "consumer" {
-  function_name    = "${var.name_prefix}-consumer"
-  role             = aws_iam_role.consumer.arn
-  handler          = "index.handler"
-  runtime          = "nodejs24.x"
-  architectures    = ["arm64"]
-  memory_size      = 256
-  timeout          = 30
-  filename         = data.archive_file.consumer.output_path
-  source_code_hash = data.archive_file.consumer.output_base64sha256
+  function_name                  = "${var.name_prefix}-consumer"
+  role                           = aws_iam_role.consumer.arn
+  handler                        = "index.handler"
+  runtime                        = "nodejs24.x"
+  architectures                  = ["arm64"]
+  memory_size                    = 256
+  timeout                        = 30
+  filename                       = data.archive_file.consumer.output_path
+  source_code_hash               = data.archive_file.consumer.output_base64sha256
+  reserved_concurrent_executions = -1
+
 
   environment {
     variables = {
