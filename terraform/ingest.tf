@@ -68,15 +68,16 @@ data "archive_file" "ingest" {
 }
 
 resource "aws_lambda_function" "ingest" {
-  function_name    = "${var.name_prefix}-ingest"
-  role             = aws_iam_role.ingest.arn
-  handler          = "index.handler"
-  runtime          = "nodejs24.x"
-  architectures    = ["arm64"]
-  memory_size      = 256
-  timeout          = 30
-  filename         = data.archive_file.ingest.output_path
-  source_code_hash = data.archive_file.ingest.output_base64sha256
+  function_name                  = "${var.name_prefix}-ingest"
+  role                           = aws_iam_role.ingest.arn
+  handler                        = "index.handler"
+  runtime                        = "nodejs24.x"
+  architectures                  = ["arm64"]
+  memory_size                    = 256
+  timeout                        = 30
+  filename                       = data.archive_file.ingest.output_path
+  source_code_hash               = data.archive_file.ingest.output_base64sha256
+  reserved_concurrent_executions = -1
 
   environment {
     variables = {
