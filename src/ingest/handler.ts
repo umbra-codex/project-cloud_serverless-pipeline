@@ -23,7 +23,11 @@ export function createHandler(deps: IngestDeps) {
       }
 
       await deps.sendMessage(
-        JSON.stringify({ ...(parsed as Record<string, unknown>), landedAt: record.eventTime }),
+        JSON.stringify({
+          ...(parsed as Record<string, unknown>),
+          idempotencyKey: (parsed as Record<string, unknown>).idempotencyKey ?? key,
+          landedAt: record.eventTime,
+        }),
       );
       sent += 1;
     }
