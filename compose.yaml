@@ -1,0 +1,54 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command:
+      - "redis-server"
+      - "--appendonly"
+      - "yes"
+    volumes:
+      - redis-data:/data:rw
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: events
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./compose/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    secrets:
+      - pg_password
+    restart: unless-stopped
+
+  ingest:
+    build: ./compose/ingest
+    ports: ["127.0.0.1:8081:8081"]
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  worker:
+    build: ./compose/worker
+    environment:
+      REDIS_URL: redis://redis:6379
+      PG_DB: events
+      PG_HOST: postgres
+      PG_USER: postgres
+      PG_PASSWORD_FILE: /run/secrets/pg_password
+    depends_on:
+      - redis
+      - postgres
+    secrets:
+      - pg_password
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+  redis-data:
+
+secrets:
+  pg_password:
+    file: ./secrets/pg_password
