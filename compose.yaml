@@ -45,6 +45,30 @@ services:
       - pg_password
     restart: unless-stopped
 
+  status:
+    build: ./compose/status
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      REDIS_URL: redis://redis:6379
+      PG_DB: events
+      PG_HOST: postgres
+      PG_USER: postgres
+      PG_PASSWORD_FILE: /run/secrets/pg_password
+    secrets:
+      - pg_password
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command:
+      - "tunnel"
+      - "--no-autoupdate"
+      - "run"
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on: [status, ingest]
+    restart: unless-stopped
+
 volumes:
   pg-data:
   redis-data:
