@@ -35,8 +35,8 @@ done
 
 remaining=$(count_dlq)
 if [ "$remaining" -ne 0 ]; then
-  echo "$remaining message(s) still in the dead-letter queue" > &2
-  echo "read them with: aws sqs receive-message --queue-url \"$DLQ_URL\" --max-number-of-messages 10" > &2
+  echo "$remaining message(s) still in the dead-letter queue" >&2
+  echo "read them with: aws sqs receive-message --queue-url \"$DLQ_URL\" --max-number-of-messages 10" >&2
   exit 1
 fi
 
