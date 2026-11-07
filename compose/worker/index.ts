@@ -1,10 +1,22 @@
+import { readFileSync } from "node:fs";
+import { createClient } from "redis";
+import pg from "pg";
+
 const WORKER_ID = process.env.WORKER_ID ?? `worker-${process.pid}`;
 const MAX_DELIVERIES = 5;
 const CLAIM_IDLE_MS = 30_000;
 const BATCH = 10;
 
 const password = readFileSync(process.env.PG_PASSWORD_FILE!, "utf8").trim();
-const pool = new Pool({ host: PG_HOST, user: PG_USER, database: PG_DB, password });
+const pool = new pg.Pool({
+  host: process.env.PG_HOST,
+  user: process.env.PG_USER,
+  database: process.env.PG_DB,
+  password,
+});
+
+const redis = createClient({ url: process.env.REDIS_URL });
+await redis.connect();
 
 try {
   await redis.xGroupCreate("events", "workers", "0", { MKSTREAM: true });
