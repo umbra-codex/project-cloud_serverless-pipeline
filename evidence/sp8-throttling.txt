@@ -1,0 +1,4 @@
+objects sent: 1000
+rows landed: 1000
+dead-letter messages, excluding the poison message: 0
+what I saw: All 1,000 events landed and none reached the dead-letter queue. The rows were written over about 40 seconds (eight polls, 5 seconds apart), so the consumer was draining a queue rather than keeping pace. I did not check the Lambda throttle metric, so I cannot say whether a concurrency cap was hit.
