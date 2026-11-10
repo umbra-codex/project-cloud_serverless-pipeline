@@ -1,0 +1,18 @@
+Console view: https://788516091144-tuazatod.us-east-1.console.aws.amazon.com/costmanagement/home?region=us-east-1#/cost-explorer?chartStyle=STACK&costAggregate=unBlendedCost&endDate=2026-11-08&excludeForecasting=false&filter=%5B%7B%22dimension%22:%7B%22id%22:%22RecordTypeV2%22,%22displayValue%22:%22Charge%20type%22%7D,%22operator%22:%22INCLUDES%22,%22values%22:%5B%7B%22value%22:%22Usage%22,%22displayValue%22:%22Usage%22%7D%5D%7D%5D&futureRelativeRange=CUSTOM&granularity=Monthly&groupBy=%5B%22Service%22%5D&historicalRelativeRange=CUSTOM&isDefault=true&reportMode=STANDARD&reportName=New%20cost%20and%20usage%20report&showOnlyUncategorized=false&showOnlyUntagged=false&startDate=2026-11-07&usageAggregate=undefined&useNormalizedUnits=false
+Date range: 2026-11-07 to 2026-11-08 (the days the stack was up), one Monthly bucket for the whole range
+View: unblended cost, grouped by service, filtered to Charge type = Usage, so credits are excluded
+
+DynamoDB: 0.0006439375 USD
+S3: 0.0064333065 USD
+Lambda: 0 USD
+SQS: 0 USD
+Key Management Service: 0 USD
+CloudWatch: 0 USD
+Glue: 0 USD
+EC2-Instances: 0.0193959896 USD
+VPC: 0.00937778 USD
+EC2-Other: 0.0023039504 USD
+Total: 0.038154964 USD
+
+Not from this stack: EC2-Instances, VPC, and EC2-Other. terraform/ defines no EC2 or VPC resources, so those three lines come from something else in the same account. They stay in the total above because the view shows the whole account.
+This stack: DynamoDB + S3 = 0.007077244 USD for the two days, about 0.0071 USD per 1,000 events. That is a two-day figure, not only the benchmark window, and the benchmark sent 1,000 events.
